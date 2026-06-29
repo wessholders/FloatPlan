@@ -500,6 +500,22 @@
       font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
       line-height: 1.45;
       font-size: 0.86rem;
+      border: 1px solid #c9d2df;
+      border-radius: 8px;
+      padding: 12px;
+      background: white;
+      color: var(--ink);
+      overflow: auto;
+    }
+
+    .generated a {
+      color: var(--blue);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .generated a:hover {
+      text-decoration: underline;
     }
 
     .contact-links {
@@ -923,7 +939,8 @@
                 <p class="muted">Review, send, and set your safe-return prompt.</p>
               </div>
               <label>Generated float plan
-                <textarea id="generatedPlan" class="generated" readonly></textarea>
+                <div id="generatedPlanPreview" class="generated" tabindex="0"></div>
+                <textarea id="generatedPlan" hidden readonly></textarea>
               </label>
               <div class="alert">
                 Static test mode opens the user's SMS or email app with the plan filled in. The user still taps send. Automatic delivery, delivery status, and overdue escalation require a backend service.
@@ -1026,6 +1043,7 @@
     const peopleList = document.getElementById("peopleList");
     const contactList = document.getElementById("contactList");
     const generatedPlan = document.getElementById("generatedPlan");
+    const generatedPlanPreview = document.getElementById("generatedPlanPreview");
     const contactLinks = document.getElementById("contactLinks");
     const emailAll = document.getElementById("emailAll");
     const calculatedReturn = document.getElementById("calculatedReturn");
@@ -1545,12 +1563,38 @@ This plan is held by trusted contacts.`;
       const data = getFormData();
       const plan = buildPlan(data);
       generatedPlan.value = plan;
+      renderGeneratedPlan(plan);
 
       const subject = encodeURIComponent(`Float plan: ${data.destination || "Trip"}`);
       const body = encodeURIComponent(plan);
       const emails = data.contacts.map(contact => contact.email).filter(Boolean).join(",");
       emailAll.href = `mailto:${emails}?subject=${subject}&body=${body}`;
       renderContactLinks(data, plan);
+    }
+
+    function renderGeneratedPlan(plan) {
+      generatedPlanPreview.replaceChildren();
+      const coordinateLinkPattern = /\((-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\)\s+(https:\/\/maps\.google\.com\/\?q=-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?)/g;
+      let cursor = 0;
+      let match;
+
+      while ((match = coordinateLinkPattern.exec(plan)) !== null) {
+        if (match.index > cursor) {
+          generatedPlanPreview.appendChild(document.createTextNode(plan.slice(cursor, match.index)));
+        }
+
+        const anchor = document.createElement("a");
+        anchor.href = match[3];
+        anchor.target = "_blank";
+        anchor.rel = "noopener";
+        anchor.textContent = `(${Number(match[1]).toFixed(5)}, ${Number(match[2]).toFixed(5)})`;
+        generatedPlanPreview.appendChild(anchor);
+        cursor = coordinateLinkPattern.lastIndex;
+      }
+
+      if (cursor < plan.length) {
+        generatedPlanPreview.appendChild(document.createTextNode(plan.slice(cursor)));
+      }
     }
 
     function renderContactLinks(data, plan) {
@@ -1780,9 +1824,15 @@ This plan is held by trusted contacts.`;
         await navigator.clipboard.writeText(value);
         return;
       }
-      generatedPlan.focus();
-      generatedPlan.select();
+      const fallback = document.createElement("textarea");
+      fallback.value = value;
+      fallback.style.position = "fixed";
+      fallback.style.left = "-9999px";
+      document.body.appendChild(fallback);
+      fallback.focus();
+      fallback.select();
       document.execCommand("copy");
+      fallback.remove();
     }
 
     async function setReminder() {
