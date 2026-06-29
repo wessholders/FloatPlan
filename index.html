@@ -435,6 +435,58 @@
       color: var(--navy);
     }
 
+    .summary-box.status-clear {
+      border-color: #b9d9cb;
+      background: #f1faf6;
+    }
+
+    .summary-box.status-waiting {
+      border-color: #f2cfaa;
+      background: #fff8f0;
+    }
+
+    .summary-map {
+      position: relative;
+      min-height: 78px;
+      border: 1px solid #c4d3dc;
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(23, 107, 135, 0.2) 25%, transparent 25%) 0 0 / 24px 24px,
+        linear-gradient(45deg, rgba(38, 115, 91, 0.16) 25%, transparent 25%) 0 0 / 30px 30px,
+        #e7f0f4;
+    }
+
+    .summary-map::before {
+      content: "";
+      position: absolute;
+      inset: 14px 12px;
+      border-top: 2px solid rgba(18, 53, 91, 0.35);
+      border-right: 2px solid rgba(18, 53, 91, 0.2);
+      transform: rotate(-8deg);
+    }
+
+    .summary-pin {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50% 50% 50% 0;
+      background: var(--orange);
+      transform: translate(-50%, -50%) rotate(-45deg);
+      box-shadow: 0 0 0 5px rgba(217, 95, 2, 0.18);
+    }
+
+    .summary-pin::after {
+      content: "";
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: white;
+      top: 4px;
+      left: 4px;
+    }
+
     .generated {
       min-height: 270px;
       white-space: pre-wrap;
@@ -757,18 +809,10 @@
                   <input name="returnClock" type="time" required>
                 </label>
               </div>
-              <div class="grid two" hidden>
-                <label>Departure
-                  <input name="departureTime" type="datetime-local">
-                </label>
-                <label>Expected return
-                  <input name="returnTime" type="datetime-local">
-                </label>
-              </div>
-              <div class="summary-box">
-                <strong>Return check</strong>
-                <span class="muted" id="calculatedReturn">Not set yet</span>
-              </div>
+              <input name="departureTime" type="hidden">
+              <input name="returnTime" type="hidden">
+              <input name="safeReturnReported" type="hidden" value="false">
+              <span id="calculatedReturn" hidden>Not set yet</span>
               <label>Weather or water notes
                 <textarea name="conditions" placeholder="Forecast concerns, tide/current, water temperature, visibility"></textarea>
               </label>
@@ -1002,6 +1046,7 @@
       syncReturnSite();
       const data = Object.fromEntries(new FormData(form).entries());
       data.differentReturnSite = differentReturnSite.checked;
+      data.safeReturnReported = data.safeReturnReported === "true";
       if (!data.differentReturnSite) data.returnSite = data.launchSite;
       data.people = Array.from(peopleList.querySelectorAll(".person-card")).map(card => rowData(card, "person"));
       data.contacts = Array.from(contactList.querySelectorAll(".contact-card")).map(card => rowData(card, "contact"));
@@ -1446,16 +1491,21 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
     function updateSummary() {
       const data = getFormData();
       const summary = document.getElementById("quickSummary");
+      const recipientCount = data.contacts.filter(contact => contact.phone || contact.email).length;
       summary.replaceChildren(
         summaryBox("Trip", data.destination || "No destination yet"),
-        summaryBox("Return check", formatDateTime(data.returnTime)),
-        summaryBox("Recipients", `${data.contacts.filter(contact => contact.phone || contact.email).length || "No"} contacts`)
+        summaryBox("Depart", formatDateTime(data.departureTime)),
+        locationSummaryBox("Depart location", data.launchSite || "No launch pin yet"),
+        summaryBox("Expected return", formatDateTime(data.returnTime)),
+        locationSummaryBox("Return location", data.returnSite || data.launchSite || "No return pin yet"),
+        summaryBox("Recipients", `${recipientCount || "No"} contacts`),
+        summaryBox("Safe return", data.safeReturnReported ? "Reported home safe" : "Not reported yet", data.safeReturnReported ? "status-clear" : "status-waiting")
       );
     }
 
-    function summaryBox(title, value) {
+    function summaryBox(title, value, extraClass = "") {
       const box = document.createElement("div");
-      box.className = "summary-box";
+      box.className = `summary-box ${extraClass}`.trim();
       const strong = document.createElement("strong");
       strong.textContent = title;
       const span = document.createElement("span");
@@ -1463,6 +1513,31 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
       span.textContent = value;
       box.append(strong, span);
       return box;
+    }
+
+    function locationSummaryBox(title, value) {
+      const box = summaryBox(title, value);
+      box.appendChild(summaryMap(value));
+      return box;
+    }
+
+    function summaryMap(value) {
+      const map = document.createElement("div");
+      map.className = "summary-map";
+      const coords = parseCoords(value);
+      const pin = document.createElement("span");
+      pin.className = "summary-pin";
+      const position = coords ? mapPosition(coords.lat, coords.lon) : { x: 50, y: 50 };
+      pin.style.left = `${position.x}%`;
+      pin.style.top = `${position.y}%`;
+      map.appendChild(pin);
+      return map;
+    }
+
+    function mapPosition(lat, lon) {
+      const x = Math.min(88, Math.max(12, ((lon + 180) / 360) * 100));
+      const y = Math.min(82, Math.max(18, ((90 - lat) / 180) * 100));
+      return { x, y };
     }
 
     function showStep(index) {
@@ -1564,6 +1639,8 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
       const data = getFormData();
       const message = `I am home safe from my ${data.activity || "water"} trip to ${data.destination || "the planned area"}. Please close my float plan.`;
       const contacts = data.contacts.filter(contact => contact.phone || contact.email);
+      form.elements.safeReturnReported.value = "true";
+      saveDraft();
       if (!contacts.length) {
         await copyText(message);
         saveStatus.textContent = "Safe message copied";

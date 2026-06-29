@@ -14,6 +14,7 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 - Popup Leaflet satellite map picker for launch and optional return/stop pins
 - US phone formatting for operator, passenger, and contact numbers
 - Browser location capture for launch and return/stop shortcuts
+- Sidebar trip status with departure, return, locations, recipients, and safe-return state
 - Browser return prompt and "I'm home safe" message
 
 ## Open Locally
