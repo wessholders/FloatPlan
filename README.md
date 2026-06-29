@@ -11,11 +11,11 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 - Optional detail: passengers, vessel, safety gear, beacons, vehicle/trailer, route notes
 - Generated float plan message
 - SMS and email handoff links
-- Popup Leaflet satellite map picker for launch and optional return/stop pins
+- Popup Leaflet hybrid map picker for launch and optional return/stop pins
 - US phone formatting for operator, passenger, and contact numbers
 - Browser location capture for launch and return/stop shortcuts
 - Sidebar trip status with departure, return, locations, recipients, and safe-return state
-- Satellite sidebar thumbnails when launch/return coordinates are present
+- Hybrid sidebar thumbnails when launch/return coordinates are present
 - Clear-plan action to wipe the current browser draft and start over
 - Browser return prompt and "I'm home safe" message
 
@@ -23,7 +23,7 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 
 Open `index.html` in a browser.
 
-For best map and SMS testing, publish to GitHub Pages and open the page on a phone. The prototype uses Leaflet from a CDN and Esri satellite tiles, so the map needs network access. It also uses `sms:` and `mailto:` links, which can prefill the message in the user's native SMS or email app. The user still has to tap send.
+For best map and SMS testing, publish to GitHub Pages and open the page on a phone. The prototype uses Leaflet from a CDN and Esri imagery/reference tiles, so the map needs network access. It also uses `sms:` and `mailto:` links, which can prefill the message in the user's native SMS or email app. The user still has to tap send.
 
 Static GitHub Pages cannot send SMS/email automatically, verify delivery, or run overdue escalation by itself. Real delivery requires a backend or serverless function using a provider such as Twilio for SMS and SendGrid/Postmark/AWS SES for email.
 

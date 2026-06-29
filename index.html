@@ -469,6 +469,10 @@
       display: block;
     }
 
+    .summary-tile-layer.reference {
+      pointer-events: none;
+    }
+
     .summary-pin {
       position: absolute;
       width: 14px;
@@ -590,6 +594,19 @@
       color: var(--muted);
       font-size: 0.86rem;
       font-weight: 700;
+    }
+
+    .coord-link {
+      display: inline-flex;
+      width: fit-content;
+      color: var(--blue);
+      font-size: 0.86rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .coord-link:hover {
+      text-decoration: underline;
     }
 
     @media (min-width: 760px) {
@@ -736,13 +753,6 @@
                   <input name="operatorPhone" inputmode="tel" autocomplete="tel" required placeholder="Mobile number">
                 </label>
               </div>
-              <label>Phone country
-                <select name="phoneCountry">
-                  <option value="US" selected>United States</option>
-                  <option value="CA">Canada</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </label>
               <div class="grid two">
                 <label>Activity
                   <select name="activity" required>
@@ -762,14 +772,16 @@
                   <input name="peopleCount" type="number" min="1" step="1" value="1" required>
                 </label>
               </div>
-              <label>Launch pin or site
+              <label>Launch site description
                 <div class="input-action">
-                  <input name="launchSite" required placeholder="Ramp, marina, beach, access point, or GPS pin">
+                  <input name="launchSite" required placeholder="Ramp, marina, beach, access point">
                   <div class="field-actions">
-                    <button type="button" class="btn secondary map-button" data-location-target="launchSite" data-map-title="Launch pin">Drop pin</button>
-                    <button type="button" class="btn ghost location-button" data-location-target="launchSite">Use my location</button>
+                    <button type="button" class="btn secondary map-button" data-location-target="launchCoords" data-map-title="Launch pin">Drop pin</button>
+                    <button type="button" class="btn ghost location-button" data-location-target="launchCoords">Use my location</button>
                   </div>
                 </div>
+                <input name="launchCoords" type="hidden">
+                <span id="launchCoordsLink" class="muted">No launch pin yet</span>
               </label>
               <label class="check-row">
                 <input type="checkbox" name="differentReturnSite" id="differentReturnSite">
@@ -777,14 +789,16 @@
                   <small>Leave this off when you plan to return to the launch site.</small>
                 </span>
               </label>
-              <label class="conditional-field" id="returnSiteWrap">Return or stop pin
+              <label class="conditional-field" id="returnSiteWrap">Return or stop description
                 <div class="input-action">
-                  <input name="returnSite" placeholder="Same ramp, take-out point, marina, dock, or GPS pin">
+                  <input name="returnSite" placeholder="Take-out point, marina, dock, or ramp">
                   <div class="inline-actions">
-                    <button type="button" class="btn secondary map-button" data-location-target="returnSite" data-map-title="Return or stop pin">Drop pin</button>
-                    <button type="button" class="btn ghost location-button" data-location-target="returnSite">Use my location</button>
+                    <button type="button" class="btn secondary map-button" data-location-target="returnCoords" data-map-title="Return or stop pin">Drop pin</button>
+                    <button type="button" class="btn ghost location-button" data-location-target="returnCoords">Use my location</button>
                   </div>
                 </div>
+                <input name="returnCoords" type="hidden">
+                <span id="returnCoordsLink" class="muted">No return pin yet</span>
               </label>
               <label>Destination or operating area
                 <input name="destination" required placeholder="Lake, bay, river section, offshore area">
@@ -900,9 +914,6 @@
               <div id="contactList" class="row-list"></div>
               <div class="inline-actions">
                 <button type="button" class="btn ghost" id="addContact">Add contact</button>
-              </div>
-              <div class="alert">
-                The Coast Guard does not accept float plans before a trip. Send this to someone you trust, then close it with them when you return.
               </div>
             </div>
 
@@ -1023,6 +1034,8 @@
     const mapModal = document.getElementById("mapModal");
     const mapModalTitle = document.getElementById("mapModalTitle");
     const pinReadout = document.getElementById("pinReadout");
+    const launchCoordsLink = document.getElementById("launchCoordsLink");
+    const returnCoordsLink = document.getElementById("returnCoordsLink");
     const prevStep = document.getElementById("prevStep");
     const nextStep = document.getElementById("nextStep");
     const clearPlan = document.getElementById("clearPlan");
@@ -1059,7 +1072,10 @@
       const data = Object.fromEntries(new FormData(form).entries());
       data.differentReturnSite = differentReturnSite.checked;
       data.safeReturnReported = data.safeReturnReported === "true";
-      if (!data.differentReturnSite) data.returnSite = data.launchSite;
+      if (!data.differentReturnSite) {
+        data.returnSite = data.launchSite;
+        data.returnCoords = data.launchCoords;
+      }
       data.people = Array.from(peopleList.querySelectorAll(".person-card")).map(card => rowData(card, "person"));
       data.contacts = Array.from(contactList.querySelectorAll(".contact-card")).map(card => rowData(card, "contact"));
       return data;
@@ -1096,8 +1112,15 @@
       Object.entries(data).forEach(([key, value]) => {
         if (Array.isArray(value)) return;
         const field = form.elements[key];
-        if (field) field.value = value;
+        if (field?.type === "checkbox") {
+          field.checked = Boolean(value);
+        } else if (field) {
+          field.value = value;
+        }
       });
+
+      migrateLegacyLocation("launchSite", "launchCoords");
+      migrateLegacyLocation("returnSite", "returnCoords");
 
       if (data.departureTime && (!form.elements.departureDate.value || !form.elements.departureClock.value)) {
         const departure = new Date(data.departureTime);
@@ -1122,6 +1145,7 @@
       ensureTimingDefaults();
       syncComputedTimes();
       syncReturnSite();
+      updateCoordinateLinks();
       formatAllPhoneFields();
       updateGeneratedPlan();
       updateSummary();
@@ -1252,9 +1276,7 @@
       const showingReturn = differentReturnSite.checked;
       returnSiteWrap.classList.toggle("active", showingReturn);
       form.elements.returnSite.required = showingReturn;
-      if (!showingReturn) {
-        form.elements.returnSite.value = form.elements.launchSite.value;
-      }
+      updateCoordinateLinks();
     }
 
     function openMapPicker(targetName, title) {
@@ -1271,7 +1293,7 @@
       initializeMap();
 
       const targetCoords = parseCoords(form.elements[targetName].value);
-      const launchCoords = parseCoords(form.elements.launchSite.value);
+      const launchCoords = parseCoords(form.elements.launchCoords.value);
       const coords = targetCoords || launchCoords;
       if (coords) {
         setMapPin(coords.lat, coords.lon);
@@ -1306,6 +1328,16 @@
       L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
         maxZoom: 19,
         attribution: "Tiles &copy; Esri"
+      }).addTo(pinMap);
+
+      L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: "Roads &copy; Esri"
+      }).addTo(pinMap);
+
+      L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: "Labels &copy; Esri"
       }).addTo(pinMap);
 
       pinMap.on("click", event => {
@@ -1363,9 +1395,50 @@
     function setLocationField(targetName, lat, lon, accuracy = null) {
       const latitude = lat.toFixed(5);
       const longitude = lon.toFixed(5);
-      const maps = `https://maps.google.com/?q=${latitude},${longitude}`;
-      const accuracyText = accuracy === null ? "" : ` (${Math.round(accuracy)}m)`;
-      form.elements[targetName].value = `GPS ${latitude}, ${longitude}${accuracyText} ${maps}`;
+      form.elements[targetName].value = `(${latitude}, ${longitude})`;
+      updateCoordinateLinks();
+    }
+
+    function updateCoordinateLinks() {
+      renderCoordinateLink(launchCoordsLink, form.elements.launchCoords.value, "No launch pin yet");
+      const returnValue = differentReturnSite.checked ? form.elements.returnCoords.value : form.elements.launchCoords.value;
+      renderCoordinateLink(returnCoordsLink, returnValue, "No return pin yet");
+    }
+
+    function renderCoordinateLink(container, value, fallback) {
+      const coords = parseCoords(value);
+      container.replaceChildren();
+      if (!coords) {
+        container.className = "muted";
+        container.textContent = fallback;
+        return;
+      }
+
+      const anchor = document.createElement("a");
+      anchor.className = "coord-link";
+      anchor.href = mapsUrl(coords);
+      anchor.target = "_blank";
+      anchor.rel = "noopener";
+      anchor.textContent = coordText(coords);
+      container.className = "";
+      container.appendChild(anchor);
+    }
+
+    function migrateLegacyLocation(siteFieldName, coordFieldName) {
+      const siteField = form.elements[siteFieldName];
+      const coordField = form.elements[coordFieldName];
+      if (!siteField || !coordField || coordField.value) return;
+
+      const coords = parseCoords(siteField.value);
+      if (!coords) return;
+
+      coordField.value = coordText(coords);
+      siteField.value = String(siteField.value)
+        .replace(/GPS\s*/i, "")
+        .replace(/\(?-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\)?/g, "")
+        .replace(/https?:\/\/\S+/g, "")
+        .replace(/\(\d+m\)/g, "")
+        .trim();
     }
 
     function parseCoords(value) {
@@ -1376,6 +1449,21 @@
       if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
       if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
       return { lat, lon };
+    }
+
+    function coordText(coords) {
+      return `(${coords.lat.toFixed(5)}, ${coords.lon.toFixed(5)})`;
+    }
+
+    function mapsUrl(coords) {
+      return `https://maps.google.com/?q=${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`;
+    }
+
+    function formatLocationPlan(site, coordsValue) {
+      const coords = parseCoords(coordsValue);
+      const lines = [site || "Not provided"];
+      if (coords) lines.push(`${coordText(coords)} ${mapsUrl(coords)}`);
+      return lines.join("\n");
     }
 
     function listPeople(people) {
@@ -1412,14 +1500,13 @@
 
 Operator: ${data.operatorName || "Not provided"}
 Operator phone: ${data.operatorPhone || "Not provided"}
-Phone country: ${data.phoneCountry || "US"}
 Activity: ${data.activity || "Not provided"}
 People aboard: ${data.peopleCount || "Not provided"}
 
 TRIP
-Launch site: ${data.launchSite || "Not provided"}
+Launch site: ${formatLocationPlan(data.launchSite, data.launchCoords)}
 Return plan: ${data.differentReturnSite ? "Ending somewhere different" : "Returning to launch site"}
-Return or stop site: ${data.returnSite || data.launchSite || "Not provided"}
+Return or stop site: ${formatLocationPlan(data.returnSite || data.launchSite, data.returnCoords || data.launchCoords)}
 Destination or area: ${data.destination || "Not provided"}
 Departure: ${formatDateTime(data.departureTime)}
 Expected return: ${formatDateTime(data.returnTime)}
@@ -1451,7 +1538,7 @@ IF OVERDUE
 3. Provide this float plan, the expected return time, route, vessel description, vehicle details, and last known contact.
 4. If you are on the water and able to radio, use VHF Channel 16 for distress or urgent marine assistance.
 
-This plan is held by trusted contacts. The U.S. Coast Guard does not accept float plans before departure.`;
+This plan is held by trusted contacts.`;
     }
 
     function updateGeneratedPlan() {
@@ -1518,9 +1605,9 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
       summary.replaceChildren(
         summaryBox("Trip", data.destination || "No destination yet"),
         summaryBox("Depart", formatDateTime(data.departureTime)),
-        locationSummaryBox("Depart location", data.launchSite || "No launch pin yet"),
+        locationSummaryBox("Depart location", data.launchSite || "No launch description yet", data.launchCoords),
         summaryBox("Expected return", formatDateTime(data.returnTime)),
-        locationSummaryBox("Return location", data.returnSite || data.launchSite || "No return pin yet"),
+        locationSummaryBox("Return location", data.returnSite || data.launchSite || "No return description yet", data.returnCoords || data.launchCoords),
         summaryBox("Recipients", `${recipientCount || "No"} contacts`),
         summaryBox("Safe return", data.safeReturnReported ? "Reported home safe" : "Not reported yet", data.safeReturnReported ? "status-clear" : "status-waiting")
       );
@@ -1538,11 +1625,23 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
       return box;
     }
 
-    function locationSummaryBox(title, value) {
+    function locationSummaryBox(title, value, coordsValue) {
       const box = summaryBox(title, value);
-      const map = summaryMap(value);
+      const coords = parseCoords(coordsValue);
+      if (coords) box.appendChild(coordinateAnchor(coords));
+      const map = summaryMap(coordsValue);
       if (map) box.appendChild(map);
       return box;
+    }
+
+    function coordinateAnchor(coords) {
+      const anchor = document.createElement("a");
+      anchor.className = "coord-link";
+      anchor.href = mapsUrl(coords);
+      anchor.target = "_blank";
+      anchor.rel = "noopener";
+      anchor.textContent = coordText(coords);
+      return anchor;
     }
 
     function summaryMap(value) {
@@ -1562,20 +1661,44 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
           img.alt = "";
           img.decoding = "async";
           img.loading = "lazy";
-          img.src = satelliteTileUrl(tile.x + xOffset, tile.y + yOffset, 17);
+          img.src = tileUrl("World_Imagery", tile.x + xOffset, tile.y + yOffset, 17);
           tileLayer.appendChild(img);
         }
       }
+      const roadsLayer = summaryReferenceLayer(tile, 17, "World_Transportation");
+      const labelsLayer = summaryReferenceLayer(tile, 17, "World_Boundaries_and_Places");
       const pin = document.createElement("span");
       pin.className = "summary-pin";
       pin.style.left = "50%";
       pin.style.top = "50%";
-      map.append(tileLayer, pin);
+      map.append(tileLayer, roadsLayer, labelsLayer, pin);
       return map;
     }
 
-    function satelliteTileUrl(x, y, zoom) {
-      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`;
+    function summaryReferenceLayer(tile, zoom, service) {
+      const tileLayer = document.createElement("div");
+      tileLayer.className = "summary-tile-layer reference";
+      tileLayer.style.left = `calc(50% - ${256 + tile.pixelX}px)`;
+      tileLayer.style.top = `calc(50% - ${256 + tile.pixelY}px)`;
+      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
+        for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+          const img = document.createElement("img");
+          img.alt = "";
+          img.decoding = "async";
+          img.loading = "lazy";
+          img.src = tileUrl(service, tile.x + xOffset, tile.y + yOffset, zoom);
+          tileLayer.appendChild(img);
+        }
+      }
+      return tileLayer;
+    }
+
+    function tileUrl(service, x, y, zoom) {
+      const base = service === "World_Imagery"
+        ? "https://server.arcgisonline.com/ArcGIS/rest/services"
+        : "https://services.arcgisonline.com/ArcGIS/rest/services/Reference";
+      const path = service === "World_Imagery" ? service : service;
+      return `${base}/${path}/MapServer/tile/${zoom}/${y}/${x}`;
     }
 
     function latLonToTile(lat, lon, zoom) {
@@ -1621,7 +1744,7 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
     }
 
     function isUSPhoneMode() {
-      return form.elements.phoneCountry.value === "US";
+      return true;
     }
 
     function isPhoneInput(input) {
@@ -1712,10 +1835,6 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
       saveDraft();
     });
     form.addEventListener("change", saveDraft);
-    form.elements.phoneCountry.addEventListener("change", () => {
-      formatAllPhoneFields();
-      saveDraft();
-    });
     document.querySelectorAll(".location-button").forEach(button => {
       button.addEventListener("click", () => captureLocation(button.dataset.locationTarget));
     });
@@ -1725,6 +1844,7 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
     differentReturnSite.addEventListener("change", () => {
       if (differentReturnSite.checked && form.elements.returnSite.value === form.elements.launchSite.value) {
         form.elements.returnSite.value = "";
+        form.elements.returnCoords.value = "";
       }
       saveDraft();
     });

@@ -21,8 +21,8 @@ Minimum viable information:
 - Operator name and phone
 - Activity type
 - Number of people aboard
-- Launch site or GPS pin
-- Return/stop site or GPS pin
+- Launch site description and optional map pin
+- Return/stop site description and optional map pin
 - Destination or operating area
 - Departure time
 - Expected return time
@@ -87,7 +87,7 @@ Important static-web limitation:
 GitHub Pages is useful for testing the user handoff flow on real phones:
 
 - Open the page on iOS and Android.
-- Confirm the launch map popup opens and can save a satellite-map pin.
+- Confirm the launch map popup opens and can save a hybrid-map pin.
 - Confirm the return/stop map only appears when the user checks that they are ending somewhere different.
 - Confirm departure and return both use date and time controls.
 - Confirm US phone numbers format as `(xxx) xxx-xxxx`.
