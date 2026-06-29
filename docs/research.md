@@ -59,7 +59,7 @@ Source: https://floatplancentral.cgaux.org/help/BoatingEmergencyGuide.htm
 - The dock workflow must be under two minutes for common repeat users.
 - Required fields should be limited to what materially improves a search.
 - Launch Location and Pull Out Location should support a simple map pin popup, current-location capture, and manual editing.
-- Round trips should be the default. A separate Pull Out Location pin should only appear when the user says they are pulling out somewhere different.
+- Out and back should be the default trip shape. A separate Pull Out Location pin should only appear when the user chooses Different Pull Out Location.
 - Departure and expected return should both be explicit calendar and time selections.
 - Phone formatting should follow the user's country preference; during US-first development, display phone numbers as `(xxx) xxx-xxxx`.
 - Optional sections should be skippable but easy to save for reuse later.
@@ -88,7 +88,7 @@ GitHub Pages is useful for testing the user handoff flow on real phones:
 
 - Open the page on iOS and Android.
 - Confirm the launch map popup opens and can save a hybrid-map pin.
-- Confirm the Pull Out Location map only appears when the user checks that they are pulling out somewhere different.
+- Confirm the Pull Out Location map only appears when the user chooses Different Pull Out Location.
 - Confirm departure and return both use date and time controls.
 - Confirm US phone numbers format as `(xxx) xxx-xxxx`.
 - Enter one phone contact and one email contact.

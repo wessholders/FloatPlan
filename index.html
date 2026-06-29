@@ -270,32 +270,43 @@
       font-size: 0.8rem;
     }
 
-    .check-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .segment-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .segment-card {
+      min-height: 62px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
+      padding: 11px 12px;
+      display: grid;
+      gap: 3px;
       background: #fbfcfe;
       color: #27364a;
-      font-weight: 800;
+      cursor: pointer;
     }
 
-    .check-row input {
-      width: 18px;
-      height: 18px;
-      min-height: 18px;
-      margin-top: 2px;
-      flex: 0 0 auto;
-      accent-color: var(--green);
+    .segment-card strong {
+      color: var(--navy);
     }
 
-    .check-row small {
-      display: block;
+    .segment-card small {
       color: var(--muted);
       font-weight: 600;
-      margin-top: 2px;
+    }
+
+    .segment-option input:checked + .segment-card {
+      border-color: var(--green);
+      background: #f1faf6;
+      box-shadow: 0 0 0 3px rgba(38, 115, 91, 0.12);
     }
 
     input,
@@ -648,6 +659,10 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
+      .segmented {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .contact-link-row {
         grid-template-columns: 1fr auto;
         align-items: center;
@@ -799,12 +814,25 @@
                 <input name="launchCoords" type="hidden">
                 <span id="launchCoordsLink" class="muted">No Launch Location pin yet</span>
               </label>
-              <label class="check-row">
-                <input type="checkbox" name="differentReturnSite" id="differentReturnSite">
-                <span>I'm pulling out somewhere different
-                  <small>Leave this off when you plan to pull out at the Launch Location.</small>
-                </span>
-              </label>
+              <div class="section-head">
+                <h3>Trip shape</h3>
+              </div>
+              <div class="segmented" role="radiogroup" aria-label="Trip shape">
+                <label class="segment-option">
+                  <input type="radio" name="tripShape" value="roundTrip" checked>
+                  <span class="segment-card">
+                    <strong>Out and back</strong>
+                    <small>Launch and Pull Out Location are the same.</small>
+                  </span>
+                </label>
+                <label class="segment-option">
+                  <input type="radio" name="tripShape" value="differentPullOut">
+                  <span class="segment-card">
+                    <strong>Different pull out</strong>
+                    <small>Set a separate Pull Out Location.</small>
+                  </span>
+                </label>
+              </div>
               <label class="conditional-field" id="returnSiteWrap">Pull Out Location description
                 <div class="input-action">
                   <input name="returnSite" placeholder="Pull out point, marina, dock, or ramp">
@@ -1047,7 +1075,6 @@
     const contactLinks = document.getElementById("contactLinks");
     const emailAll = document.getElementById("emailAll");
     const calculatedReturn = document.getElementById("calculatedReturn");
-    const differentReturnSite = document.getElementById("differentReturnSite");
     const returnSiteWrap = document.getElementById("returnSiteWrap");
     const mapModal = document.getElementById("mapModal");
     const mapModalTitle = document.getElementById("mapModalTitle");
@@ -1088,7 +1115,7 @@
       syncComputedTimes();
       syncReturnSite();
       const data = Object.fromEntries(new FormData(form).entries());
-      data.differentReturnSite = differentReturnSite.checked;
+      data.differentReturnSite = form.elements.tripShape.value === "differentPullOut";
       data.safeReturnReported = data.safeReturnReported === "true";
       if (!data.differentReturnSite) {
         data.returnSite = data.launchSite;
@@ -1130,12 +1157,16 @@
       Object.entries(data).forEach(([key, value]) => {
         if (Array.isArray(value)) return;
         const field = form.elements[key];
-        if (field?.type === "checkbox") {
-          field.checked = Boolean(value);
-        } else if (field) {
+        if (field) {
           field.value = value;
         }
       });
+
+      if (data.tripShape) {
+        form.elements.tripShape.value = data.tripShape;
+      } else if (typeof data.differentReturnSite === "boolean") {
+        form.elements.tripShape.value = data.differentReturnSite ? "differentPullOut" : "roundTrip";
+      }
 
       migrateLegacyLocation("launchSite", "launchCoords");
       migrateLegacyLocation("returnSite", "returnCoords");
@@ -1291,7 +1322,7 @@
     }
 
     function syncReturnSite() {
-      const showingReturn = differentReturnSite.checked;
+      const showingReturn = form.elements.tripShape.value === "differentPullOut";
       returnSiteWrap.classList.toggle("active", showingReturn);
       form.elements.returnSite.required = showingReturn;
       updateCoordinateLinks();
@@ -1419,7 +1450,7 @@
 
     function updateCoordinateLinks() {
       renderCoordinateLink(launchCoordsLink, form.elements.launchCoords.value, "No Launch Location pin yet");
-      const returnValue = differentReturnSite.checked ? form.elements.returnCoords.value : form.elements.launchCoords.value;
+      const returnValue = form.elements.tripShape.value === "differentPullOut" ? form.elements.returnCoords.value : form.elements.launchCoords.value;
       renderCoordinateLink(returnCoordsLink, returnValue, "No Pull Out Location pin yet");
     }
 
@@ -1523,7 +1554,7 @@ People aboard: ${data.peopleCount || "Not provided"}
 
 TRIP
 Launch Location: ${formatLocationPlan(data.launchSite, data.launchCoords)}
-Pull Out plan: ${data.differentReturnSite ? "Pulling out somewhere different" : "Pulling out at Launch Location"}
+Trip shape: ${data.differentReturnSite ? "Different Pull Out Location" : "Out and back"}
 Pull Out Location: ${formatLocationPlan(data.returnSite || data.launchSite, data.returnCoords || data.launchCoords)}
 Destination or area: ${data.destination || "Not provided"}
 Departure: ${formatDateTime(data.departureTime)}
@@ -1891,13 +1922,13 @@ This plan is held by trusted contacts.`;
     document.querySelectorAll(".map-button").forEach(button => {
       button.addEventListener("click", () => openMapPicker(button.dataset.locationTarget, button.dataset.mapTitle));
     });
-    differentReturnSite.addEventListener("change", () => {
-      if (differentReturnSite.checked && form.elements.returnSite.value === form.elements.launchSite.value) {
+    Array.from(form.elements.tripShape).forEach(input => input.addEventListener("change", () => {
+      if (form.elements.tripShape.value === "differentPullOut" && form.elements.returnSite.value === form.elements.launchSite.value) {
         form.elements.returnSite.value = "";
         form.elements.returnCoords.value = "";
       }
       saveDraft();
-    });
+    }));
     document.getElementById("closeMap").addEventListener("click", closeMapPicker);
     document.getElementById("savePin").addEventListener("click", saveMapPin);
     document.getElementById("mapUseLocation").addEventListener("click", useLocationInMap);

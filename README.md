@@ -12,6 +12,7 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 - Generated float plan message
 - SMS and email handoff links
 - Popup Leaflet hybrid map picker for Launch Location and optional Pull Out Location pins
+- Trip-shape control for Out and Back vs Different Pull Out Location
 - US phone formatting for operator, passenger, and contact numbers
 - Browser location capture for Launch Location and Pull Out Location shortcuts
 - Sidebar trip status with departure, return, locations, recipients, and safe-return state
