@@ -7,13 +7,13 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 - Static HTML app in `index.html`
 - No auth or backend
 - Browser-local draft autosave
-- Required fast path: operator, activity, launch pin/site, destination, departure date/time, return date/time, contacts
+- Required fast path: operator, activity, Launch Location, Pull Out Location, destination, departure date/time, return date/time, contacts
 - Optional detail: passengers, vessel, safety gear, beacons, vehicle/trailer, route notes
 - Generated float plan message
 - SMS and email handoff links
-- Popup Leaflet hybrid map picker for launch and optional return/stop pins
+- Popup Leaflet hybrid map picker for Launch Location and optional Pull Out Location pins
 - US phone formatting for operator, passenger, and contact numbers
-- Browser location capture for launch and return/stop shortcuts
+- Browser location capture for Launch Location and Pull Out Location shortcuts
 - Sidebar trip status with departure, return, locations, recipients, and safe-return state
 - Hybrid sidebar thumbnails when launch/return coordinates are present
 - Clear-plan action to wipe the current browser draft and start over

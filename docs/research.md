@@ -21,8 +21,8 @@ Minimum viable information:
 - Operator name and phone
 - Activity type
 - Number of people aboard
-- Launch site description and optional map pin
-- Return/stop site description and optional map pin
+- Launch Location description and optional map pin
+- Pull Out Location description and optional map pin
 - Destination or operating area
 - Departure time
 - Expected return time
@@ -30,7 +30,7 @@ Minimum viable information:
 
 High-value optional information:
 
-- Planned route, stops, waypoints, and alternate take-out
+- Planned route, stops, waypoints, and alternate pull out
 - Passenger names, ages, phone numbers, PFD color, and medical notes
 - Vessel type, length, color, name, registration, propulsion, and visible features
 - Communications equipment: cell, VHF, satellite messenger, DSC/MMSI
@@ -58,8 +58,8 @@ Source: https://floatplancentral.cgaux.org/help/BoatingEmergencyGuide.htm
 
 - The dock workflow must be under two minutes for common repeat users.
 - Required fields should be limited to what materially improves a search.
-- Launch and return locations should support a simple map pin popup, current-location capture, and manual editing.
-- Round trips should be the default. A separate return/stop pin should only appear when the user says they are ending somewhere different.
+- Launch Location and Pull Out Location should support a simple map pin popup, current-location capture, and manual editing.
+- Round trips should be the default. A separate Pull Out Location pin should only appear when the user says they are pulling out somewhere different.
 - Departure and expected return should both be explicit calendar and time selections.
 - Phone formatting should follow the user's country preference; during US-first development, display phone numbers as `(xxx) xxx-xxxx`.
 - Optional sections should be skippable but easy to save for reuse later.
@@ -88,7 +88,7 @@ GitHub Pages is useful for testing the user handoff flow on real phones:
 
 - Open the page on iOS and Android.
 - Confirm the launch map popup opens and can save a hybrid-map pin.
-- Confirm the return/stop map only appears when the user checks that they are ending somewhere different.
+- Confirm the Pull Out Location map only appears when the user checks that they are pulling out somewhere different.
 - Confirm departure and return both use date and time controls.
 - Confirm US phone numbers format as `(xxx) xxx-xxxx`.
 - Enter one phone contact and one email contact.

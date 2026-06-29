@@ -788,39 +788,39 @@
                   <input name="peopleCount" type="number" min="1" step="1" value="1" required>
                 </label>
               </div>
-              <label>Launch site description
+              <label>Launch Location description
                 <div class="input-action">
                   <input name="launchSite" required placeholder="Ramp, marina, beach, access point">
                   <div class="field-actions">
-                    <button type="button" class="btn secondary map-button" data-location-target="launchCoords" data-map-title="Launch pin">Drop pin</button>
+                    <button type="button" class="btn secondary map-button" data-location-target="launchCoords" data-map-title="Launch Location pin">Drop pin</button>
                     <button type="button" class="btn ghost location-button" data-location-target="launchCoords">Use my location</button>
                   </div>
                 </div>
                 <input name="launchCoords" type="hidden">
-                <span id="launchCoordsLink" class="muted">No launch pin yet</span>
+                <span id="launchCoordsLink" class="muted">No Launch Location pin yet</span>
               </label>
               <label class="check-row">
                 <input type="checkbox" name="differentReturnSite" id="differentReturnSite">
-                <span>I'm ending somewhere different
-                  <small>Leave this off when you plan to return to the launch site.</small>
+                <span>I'm pulling out somewhere different
+                  <small>Leave this off when you plan to pull out at the Launch Location.</small>
                 </span>
               </label>
-              <label class="conditional-field" id="returnSiteWrap">Return or stop description
+              <label class="conditional-field" id="returnSiteWrap">Pull Out Location description
                 <div class="input-action">
-                  <input name="returnSite" placeholder="Take-out point, marina, dock, or ramp">
+                  <input name="returnSite" placeholder="Pull out point, marina, dock, or ramp">
                   <div class="inline-actions">
-                    <button type="button" class="btn secondary map-button" data-location-target="returnCoords" data-map-title="Return or stop pin">Drop pin</button>
+                    <button type="button" class="btn secondary map-button" data-location-target="returnCoords" data-map-title="Pull Out Location pin">Drop pin</button>
                     <button type="button" class="btn ghost location-button" data-location-target="returnCoords">Use my location</button>
                   </div>
                 </div>
                 <input name="returnCoords" type="hidden">
-                <span id="returnCoordsLink" class="muted">No return pin yet</span>
+                <span id="returnCoordsLink" class="muted">No Pull Out Location pin yet</span>
               </label>
               <label>Destination or operating area
                 <input name="destination" required placeholder="Lake, bay, river section, offshore area">
               </label>
               <label>Route and waypoints
-                <textarea name="route" placeholder="Planned route, stops, hazards, alternate take-out, fishing spots"></textarea>
+                <textarea name="route" placeholder="Planned route, stops, hazards, alternate pull out, fishing spots"></textarea>
               </label>
               <div class="section-head">
                 <h3>Timing</h3>
@@ -1418,9 +1418,9 @@
     }
 
     function updateCoordinateLinks() {
-      renderCoordinateLink(launchCoordsLink, form.elements.launchCoords.value, "No launch pin yet");
+      renderCoordinateLink(launchCoordsLink, form.elements.launchCoords.value, "No Launch Location pin yet");
       const returnValue = differentReturnSite.checked ? form.elements.returnCoords.value : form.elements.launchCoords.value;
-      renderCoordinateLink(returnCoordsLink, returnValue, "No return pin yet");
+      renderCoordinateLink(returnCoordsLink, returnValue, "No Pull Out Location pin yet");
     }
 
     function renderCoordinateLink(container, value, fallback) {
@@ -1522,9 +1522,9 @@ Activity: ${data.activity || "Not provided"}
 People aboard: ${data.peopleCount || "Not provided"}
 
 TRIP
-Launch site: ${formatLocationPlan(data.launchSite, data.launchCoords)}
-Return plan: ${data.differentReturnSite ? "Ending somewhere different" : "Returning to launch site"}
-Return or stop site: ${formatLocationPlan(data.returnSite || data.launchSite, data.returnCoords || data.launchCoords)}
+Launch Location: ${formatLocationPlan(data.launchSite, data.launchCoords)}
+Pull Out plan: ${data.differentReturnSite ? "Pulling out somewhere different" : "Pulling out at Launch Location"}
+Pull Out Location: ${formatLocationPlan(data.returnSite || data.launchSite, data.returnCoords || data.launchCoords)}
 Destination or area: ${data.destination || "Not provided"}
 Departure: ${formatDateTime(data.departureTime)}
 Expected return: ${formatDateTime(data.returnTime)}
@@ -1649,9 +1649,9 @@ This plan is held by trusted contacts.`;
       summary.replaceChildren(
         summaryBox("Trip", data.destination || "No destination yet"),
         summaryBox("Depart", formatDateTime(data.departureTime)),
-        locationSummaryBox("Depart location", data.launchSite || "No launch description yet", data.launchCoords),
+        locationSummaryBox("Launch Location", data.launchSite || "No Launch Location description yet", data.launchCoords),
         summaryBox("Expected return", formatDateTime(data.returnTime)),
-        locationSummaryBox("Return location", data.returnSite || data.launchSite || "No return description yet", data.returnCoords || data.launchCoords),
+        locationSummaryBox("Pull Out Location", data.returnSite || data.launchSite || "No Pull Out Location description yet", data.returnCoords || data.launchCoords),
         summaryBox("Recipients", `${recipientCount || "No"} contacts`),
         summaryBox("Safe return", data.safeReturnReported ? "Reported home safe" : "Not reported yet", data.safeReturnReported ? "status-clear" : "status-waiting")
       );
