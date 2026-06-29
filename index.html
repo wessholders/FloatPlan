@@ -370,22 +370,6 @@
       gap: 12px;
     }
 
-    .preset-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .chip {
-      min-height: 40px;
-      border-radius: 999px;
-      padding: 0 12px;
-      background: #edf4f1;
-      color: var(--green);
-      font-weight: 800;
-      border: 1px solid #c8ded5;
-    }
-
     .btn {
       min-height: 44px;
       border-radius: 8px;
@@ -590,9 +574,6 @@
         grid-template-columns: auto auto;
       }
 
-      .preset-row {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-      }
     }
 
     @media (max-width: 520px) {
@@ -700,6 +681,13 @@
                   <input name="operatorPhone" inputmode="tel" autocomplete="tel" required placeholder="Mobile number">
                 </label>
               </div>
+              <label>Phone country
+                <select name="phoneCountry">
+                  <option value="US" selected>United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </label>
               <div class="grid two">
                 <label>Activity
                   <select name="activity" required>
@@ -751,38 +739,24 @@
               </label>
               <div class="section-head">
                 <h3>Timing</h3>
-                <p class="muted">Pick a launch time and trip length. The return check is calculated for you.</p>
+                <p class="muted">Set the departure and expected return directly.</p>
               </div>
               <div class="time-grid">
-                <label>Launch date
+                <label>Departure date
                   <input name="departureDate" type="date" required>
                 </label>
-                <label>Launch time
+                <label>Departure time
                   <input name="departureClock" type="time" required>
                 </label>
               </div>
-              <div class="preset-row" aria-label="Quick departure times">
-                <button type="button" class="chip departure-preset" data-departure-minutes="0">Now</button>
-                <button type="button" class="chip departure-preset" data-departure-minutes="30">+30 min</button>
-                <button type="button" class="chip departure-preset" data-departure-minutes="60">+1 hr</button>
-                <button type="button" class="chip departure-preset" data-departure-minutes="120">+2 hr</button>
-                <button type="button" class="chip departure-preset" data-departure-next-morning="true">Tomorrow AM</button>
+              <div class="time-grid">
+                <label>Return date
+                  <input name="returnDate" type="date" required>
+                </label>
+                <label>Return time
+                  <input name="returnClock" type="time" required>
+                </label>
               </div>
-              <label>Planned time on water
-                <select name="durationMinutes" required>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                  <option value="180" selected>3 hours</option>
-                  <option value="240">4 hours</option>
-                  <option value="360">6 hours</option>
-                  <option value="480">8 hours</option>
-                  <option value="720">12 hours</option>
-                  <option value="custom">Custom return time</option>
-                </select>
-              </label>
-              <label id="customReturnWrap">Expected return
-                <input name="customReturnTime" type="datetime-local">
-              </label>
               <div class="grid two" hidden>
                 <label>Departure
                   <input name="departureTime" type="datetime-local">
@@ -792,7 +766,7 @@
                 </label>
               </div>
               <div class="summary-box">
-                <strong>Calculated return check</strong>
+                <strong>Return check</strong>
                 <span class="muted" id="calculatedReturn">Not set yet</span>
               </div>
               <label>Weather or water notes
@@ -995,7 +969,6 @@
     const generatedPlan = document.getElementById("generatedPlan");
     const contactLinks = document.getElementById("contactLinks");
     const emailAll = document.getElementById("emailAll");
-    const customReturnWrap = document.getElementById("customReturnWrap");
     const calculatedReturn = document.getElementById("calculatedReturn");
     const differentReturnSite = document.getElementById("differentReturnSite");
     const returnSiteWrap = document.getElementById("returnSiteWrap");
@@ -1066,8 +1039,12 @@
         }
       }
 
-      if (data.returnTime && !form.elements.customReturnTime.value && data.durationMinutes === "custom") {
-        form.elements.customReturnTime.value = toDateTimeLocalValue(new Date(data.returnTime));
+      if (data.returnTime && (!form.elements.returnDate.value || !form.elements.returnClock.value)) {
+        const expectedReturn = new Date(data.returnTime);
+        if (!Number.isNaN(expectedReturn.getTime())) {
+          form.elements.returnDate.value = toDateValue(expectedReturn);
+          form.elements.returnClock.value = toTimeValue(expectedReturn);
+        }
       }
 
       peopleList.innerHTML = "";
@@ -1077,6 +1054,7 @@
       ensureTimingDefaults();
       syncComputedTimes();
       syncReturnSite();
+      formatAllPhoneFields();
       updateGeneratedPlan();
       updateSummary();
     }
@@ -1131,63 +1109,54 @@
     function ensureTimingDefaults() {
       const departureDate = form.elements.departureDate;
       const departureClock = form.elements.departureClock;
+      const returnDate = form.elements.returnDate;
+      const returnClock = form.elements.returnClock;
       if (!departureDate.value || !departureClock.value) {
         const now = roundToNextFive(new Date());
         departureDate.value ||= toDateValue(now);
         departureClock.value ||= toTimeValue(now);
       }
+      if (!returnDate.value || !returnClock.value) {
+        const expectedReturn = new Date(getDepartureDate()?.getTime() || Date.now());
+        expectedReturn.setHours(expectedReturn.getHours() + 3);
+        returnDate.value ||= toDateValue(expectedReturn);
+        returnClock.value ||= toTimeValue(expectedReturn);
+      }
     }
 
     function getDepartureDate() {
-      const { departureDate, departureClock } = form.elements;
-      if (!departureDate.value || !departureClock.value) return null;
-      const date = new Date(`${departureDate.value}T${departureClock.value}`);
+      return getDateTimeFromParts("departureDate", "departureClock");
+    }
+
+    function getReturnDate() {
+      return getDateTimeFromParts("returnDate", "returnClock");
+    }
+
+    function getDateTimeFromParts(dateFieldName, timeFieldName) {
+      const dateField = form.elements[dateFieldName];
+      const timeField = form.elements[timeFieldName];
+      if (!dateField.value || !timeField.value) return null;
+      const date = new Date(`${dateField.value}T${timeField.value}`);
       return Number.isNaN(date.getTime()) ? null : date;
     }
 
     function syncComputedTimes() {
       const departure = getDepartureDate();
-      const duration = form.elements.durationMinutes.value;
-      customReturnWrap.style.display = duration === "custom" ? "grid" : "none";
+      const expectedReturn = getReturnDate();
 
       if (!departure) {
         form.elements.departureTime.value = "";
-        form.elements.returnTime.value = "";
-        calculatedReturn.textContent = "Not set yet";
-        return;
-      }
-
-      form.elements.departureTime.value = toDateTimeLocalValue(departure);
-      let returnDate = null;
-      if (duration === "custom") {
-        returnDate = form.elements.customReturnTime.value ? new Date(form.elements.customReturnTime.value) : null;
       } else {
-        returnDate = new Date(departure.getTime() + Number(duration || 0) * 60 * 1000);
+        form.elements.departureTime.value = toDateTimeLocalValue(departure);
       }
 
-      if (returnDate && !Number.isNaN(returnDate.getTime())) {
-        form.elements.returnTime.value = toDateTimeLocalValue(returnDate);
+      if (expectedReturn) {
+        form.elements.returnTime.value = toDateTimeLocalValue(expectedReturn);
         calculatedReturn.textContent = formatDateTime(form.elements.returnTime.value);
       } else {
         form.elements.returnTime.value = "";
-        calculatedReturn.textContent = "Add a custom return time";
+        calculatedReturn.textContent = "Not set yet";
       }
-    }
-
-    function setDepartureFromNow(minutes) {
-      const date = roundToNextFive(new Date(Date.now() + minutes * 60 * 1000));
-      form.elements.departureDate.value = toDateValue(date);
-      form.elements.departureClock.value = toTimeValue(date);
-      saveDraft();
-    }
-
-    function setTomorrowMorning() {
-      const date = new Date();
-      date.setDate(date.getDate() + 1);
-      date.setHours(8, 0, 0, 0);
-      form.elements.departureDate.value = toDateValue(date);
-      form.elements.departureClock.value = toTimeValue(date);
-      saveDraft();
     }
 
     function captureLocation(targetName) {
@@ -1375,6 +1344,7 @@
 
 Operator: ${data.operatorName || "Not provided"}
 Operator phone: ${data.operatorPhone || "Not provided"}
+Phone country: ${data.phoneCountry || "US"}
 Activity: ${data.activity || "Not provided"}
 People aboard: ${data.peopleCount || "Not provided"}
 
@@ -1385,7 +1355,6 @@ Return or stop site: ${data.returnSite || data.launchSite || "Not provided"}
 Destination or area: ${data.destination || "Not provided"}
 Departure: ${formatDateTime(data.departureTime)}
 Expected return: ${formatDateTime(data.returnTime)}
-Planned time on water: ${data.durationMinutes === "custom" ? "Custom return time" : `${Number(data.durationMinutes || 0) / 60} hours`}
 Route and waypoints: ${data.route || "Not provided"}
 Weather or water notes: ${data.conditions || "Not provided"}
 
@@ -1465,7 +1434,13 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
 
     function smsHref(phone, message) {
       const separator = /iPad|iPhone|iPod/.test(navigator.userAgent) ? "&" : "?";
-      return `sms:${encodeURIComponent(phone)}${separator}body=${encodeURIComponent(message)}`;
+      return `sms:${encodeURIComponent(phoneForHref(phone))}${separator}body=${encodeURIComponent(message)}`;
+    }
+
+    function phoneForHref(phone) {
+      const digits = String(phone || "").replace(/\D/g, "");
+      if (isUSPhoneMode() && digits.length === 10) return `+1${digits}`;
+      return digits || phone;
     }
 
     function updateSummary() {
@@ -1504,15 +1479,43 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
 
     function currentStepValid() {
       syncReturnSite();
+      syncComputedTimes();
       const fields = Array.from(steps[currentStep].querySelectorAll("input, select, textarea"));
       const nativeValid = fields.every(field => !field.required || field.reportValidity());
       if (!nativeValid) return false;
-      if (currentStep === 0 && form.elements.durationMinutes.value === "custom" && !form.elements.customReturnTime.value) {
-        form.elements.customReturnTime.reportValidity();
-        alert("Add an expected return time or choose a planned time on water.");
+      const departure = getDepartureDate();
+      const expectedReturn = getReturnDate();
+      if (currentStep === 0 && departure && expectedReturn && expectedReturn <= departure) {
+        alert("Expected return must be after departure.");
         return false;
       }
       return true;
+    }
+
+    function isUSPhoneMode() {
+      return form.elements.phoneCountry.value === "US";
+    }
+
+    function isPhoneInput(input) {
+      return input?.name === "operatorPhone" || input?.dataset?.personField === "phone" || input?.dataset?.contactField === "phone";
+    }
+
+    function formatUSPhone(value) {
+      let digits = String(value || "").replace(/\D/g, "");
+      if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+      digits = digits.slice(0, 10);
+      if (digits.length <= 3) return digits ? `(${digits}` : "";
+      if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    function formatPhoneInput(input) {
+      if (!isUSPhoneMode() || !isPhoneInput(input)) return;
+      input.value = formatUSPhone(input.value);
+    }
+
+    function formatAllPhoneFields() {
+      Array.from(form.querySelectorAll("input")).forEach(formatPhoneInput);
     }
 
     async function copyPlan() {
@@ -1574,24 +1577,14 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
       }
     }
 
-    form.addEventListener("input", saveDraft);
-    form.elements.durationMinutes.addEventListener("change", () => {
-      if (form.elements.durationMinutes.value === "custom" && !form.elements.customReturnTime.value) {
-        const departure = getDepartureDate();
-        if (departure) {
-          form.elements.customReturnTime.value = toDateTimeLocalValue(new Date(departure.getTime() + 3 * 60 * 60 * 1000));
-        }
-      }
+    form.addEventListener("input", event => {
+      formatPhoneInput(event.target);
       saveDraft();
     });
-    document.querySelectorAll(".departure-preset").forEach(button => {
-      button.addEventListener("click", () => {
-        if (button.dataset.departureNextMorning) {
-          setTomorrowMorning();
-        } else {
-          setDepartureFromNow(Number(button.dataset.departureMinutes || 0));
-        }
-      });
+    form.addEventListener("change", saveDraft);
+    form.elements.phoneCountry.addEventListener("change", () => {
+      formatAllPhoneFields();
+      saveDraft();
     });
     document.querySelectorAll(".location-button").forEach(button => {
       button.addEventListener("click", () => captureLocation(button.dataset.locationTarget));

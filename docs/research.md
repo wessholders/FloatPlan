@@ -60,7 +60,8 @@ Source: https://floatplancentral.cgaux.org/help/BoatingEmergencyGuide.htm
 - Required fields should be limited to what materially improves a search.
 - Launch and return locations should support a simple map pin popup, current-location capture, and manual editing.
 - Round trips should be the default. A separate return/stop pin should only appear when the user says they are ending somewhere different.
-- Return timing should be calculated from launch time plus planned time on water, with a custom return override.
+- Departure and expected return should both be explicit calendar and time selections.
+- Phone formatting should follow the user's country preference; during US-first development, display phone numbers as `(xxx) xxx-xxxx`.
 - Optional sections should be skippable but easy to save for reuse later.
 - The first version should work without auth.
 - SMS matters because recipients actually see it; email is useful for complete detail and attachments.
@@ -88,6 +89,8 @@ GitHub Pages is useful for testing the user handoff flow on real phones:
 - Open the page on iOS and Android.
 - Confirm the launch map popup opens and can save a satellite-map pin.
 - Confirm the return/stop map only appears when the user checks that they are ending somewhere different.
+- Confirm departure and return both use date and time controls.
+- Confirm US phone numbers format as `(xxx) xxx-xxxx`.
 - Enter one phone contact and one email contact.
 - Confirm SMS opens with the float plan prefilled.
 - Confirm email opens with recipients, subject, and body prefilled.
