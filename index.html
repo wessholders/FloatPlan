@@ -451,19 +451,22 @@
       border: 1px solid #c4d3dc;
       border-radius: 8px;
       overflow: hidden;
-      background:
-        linear-gradient(135deg, rgba(23, 107, 135, 0.2) 25%, transparent 25%) 0 0 / 24px 24px,
-        linear-gradient(45deg, rgba(38, 115, 91, 0.16) 25%, transparent 25%) 0 0 / 30px 30px,
-        #e7f0f4;
+      background-color: #d8dee8;
     }
 
-    .summary-map::before {
-      content: "";
+    .summary-tile-layer {
       position: absolute;
-      inset: 14px 12px;
-      border-top: 2px solid rgba(18, 53, 91, 0.35);
-      border-right: 2px solid rgba(18, 53, 91, 0.2);
-      transform: rotate(-8deg);
+      width: 768px;
+      height: 768px;
+      display: grid;
+      grid-template-columns: repeat(3, 256px);
+      grid-template-rows: repeat(3, 256px);
+    }
+
+    .summary-tile-layer img {
+      width: 256px;
+      height: 256px;
+      display: block;
     }
 
     .summary-pin {
@@ -925,6 +928,7 @@
 
             <div class="form-nav">
               <button type="button" class="btn" id="prevStep">Back</button>
+              <button type="button" class="btn danger" id="clearPlan">Clear plan</button>
               <button type="button" class="btn primary" id="nextStep">Next</button>
             </div>
           </form>
@@ -1021,6 +1025,7 @@
     const pinReadout = document.getElementById("pinReadout");
     const prevStep = document.getElementById("prevStep");
     const nextStep = document.getElementById("nextStep");
+    const clearPlan = document.getElementById("clearPlan");
     let currentStep = 0;
     let reminderTimer = null;
     let pinMap = null;
@@ -1039,6 +1044,13 @@
       } catch {
         return { ...defaults };
       }
+    }
+
+    function freshDraft() {
+      return {
+        people: defaults.people.map(person => ({ ...person })),
+        contacts: defaults.contacts.map(contact => ({ ...contact }))
+      };
     }
 
     function getFormData() {
@@ -1067,6 +1079,17 @@
       saveStatus.textContent = `Saved ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
       updateGeneratedPlan();
       updateSummary();
+    }
+
+    function clearCurrentPlan() {
+      const shouldClear = confirm("Clear this float plan and start over?");
+      if (!shouldClear) return;
+
+      localStorage.removeItem(STORAGE_KEY);
+      form.reset();
+      fillForm(freshDraft());
+      showStep(0);
+      saveStatus.textContent = "Plan cleared";
     }
 
     function fillForm(data) {
@@ -1517,27 +1540,57 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
 
     function locationSummaryBox(title, value) {
       const box = summaryBox(title, value);
-      box.appendChild(summaryMap(value));
+      const map = summaryMap(value);
+      if (map) box.appendChild(map);
       return box;
     }
 
     function summaryMap(value) {
+      const coords = parseCoords(value);
+      if (!coords) return null;
+
       const map = document.createElement("div");
       map.className = "summary-map";
-      const coords = parseCoords(value);
+      const tile = latLonToTile(coords.lat, coords.lon, 17);
+      const tileLayer = document.createElement("div");
+      tileLayer.className = "summary-tile-layer";
+      tileLayer.style.left = `calc(50% - ${256 + tile.pixelX}px)`;
+      tileLayer.style.top = `calc(50% - ${256 + tile.pixelY}px)`;
+      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
+        for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+          const img = document.createElement("img");
+          img.alt = "";
+          img.decoding = "async";
+          img.loading = "lazy";
+          img.src = satelliteTileUrl(tile.x + xOffset, tile.y + yOffset, 17);
+          tileLayer.appendChild(img);
+        }
+      }
       const pin = document.createElement("span");
       pin.className = "summary-pin";
-      const position = coords ? mapPosition(coords.lat, coords.lon) : { x: 50, y: 50 };
-      pin.style.left = `${position.x}%`;
-      pin.style.top = `${position.y}%`;
-      map.appendChild(pin);
+      pin.style.left = "50%";
+      pin.style.top = "50%";
+      map.append(tileLayer, pin);
       return map;
     }
 
-    function mapPosition(lat, lon) {
-      const x = Math.min(88, Math.max(12, ((lon + 180) / 360) * 100));
-      const y = Math.min(82, Math.max(18, ((90 - lat) / 180) * 100));
-      return { x, y };
+    function satelliteTileUrl(x, y, zoom) {
+      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`;
+    }
+
+    function latLonToTile(lat, lon, zoom) {
+      const latRad = lat * Math.PI / 180;
+      const scale = 2 ** zoom;
+      const rawX = (lon + 180) / 360 * scale;
+      const rawY = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * scale;
+      const x = Math.floor(rawX);
+      const y = Math.floor(rawY);
+      return {
+        x,
+        y,
+        pixelX: Math.round((rawX - x) * 256),
+        pixelY: Math.round((rawY - y) * 256)
+      };
     }
 
     function showStep(index) {
@@ -1695,6 +1748,7 @@ This plan is held by trusted contacts. The U.S. Coast Guard does not accept floa
     document.getElementById("copyPlan").addEventListener("click", copyPlan);
     document.getElementById("reminderButton").addEventListener("click", setReminder);
     document.getElementById("safeButton").addEventListener("click", safeMessage);
+    clearPlan.addEventListener("click", clearCurrentPlan);
     prevStep.addEventListener("click", () => showStep(currentStep - 1));
     nextStep.addEventListener("click", () => {
       if (!currentStepValid()) return;
