@@ -1,0 +1,1643 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Float Plan</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d8dee8;
+      --soft: #f4f7fb;
+      --paper: #ffffff;
+      --navy: #12355b;
+      --blue: #176b87;
+      --green: #26735b;
+      --orange: #d95f02;
+      --orange-dark: #a34300;
+      --shadow: 0 12px 30px rgba(18, 53, 91, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #eaf2f7 0, #f9fbfd 320px);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(216, 222, 232, 0.8);
+    }
+
+    .topbar {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: conic-gradient(from 220deg, var(--orange), var(--blue), var(--green), var(--orange));
+      box-shadow: 0 6px 16px rgba(23, 107, 135, 0.26);
+      flex: 0 0 auto;
+    }
+
+    .status-pill {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-size: 0.86rem;
+      white-space: nowrap;
+    }
+
+    main {
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 22px 18px 42px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .workspace {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .plan-header {
+      display: grid;
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .plan-heading {
+      display: grid;
+      gap: 7px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(1.7rem, 4vw, 2.7rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: var(--navy);
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      line-height: 1.2;
+      color: var(--navy);
+    }
+
+    h3 {
+      font-size: 0.98rem;
+      color: var(--navy);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .route-visual {
+      min-height: 160px;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #c4d3dc;
+      background:
+        radial-gradient(circle at 16% 22%, rgba(38, 115, 91, 0.35) 0 9%, transparent 10%),
+        radial-gradient(circle at 72% 74%, rgba(217, 95, 2, 0.25) 0 8%, transparent 9%),
+        linear-gradient(135deg, rgba(23, 107, 135, 0.18) 25%, transparent 25%) 0 0 / 46px 46px,
+        linear-gradient(45deg, rgba(18, 53, 91, 0.1) 25%, transparent 25%) 0 0 / 38px 38px,
+        #e6f1f5;
+    }
+
+    .route-visual::before {
+      content: "";
+      position: absolute;
+      inset: 32px 26px 38px 42px;
+      border-top: 4px solid var(--orange);
+      border-right: 4px solid var(--orange);
+      border-radius: 0 44px 0 0;
+      transform: rotate(-7deg);
+      transform-origin: left center;
+    }
+
+    .route-visual::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      right: 42px;
+      bottom: 36px;
+      background: var(--orange);
+      box-shadow: -190px -70px 0 var(--green), 0 0 0 6px rgba(217, 95, 2, 0.18);
+    }
+
+    .progress {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .step-tab {
+      min-height: 42px;
+      border-radius: 8px;
+      background: #eef3f7;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .step-tab.active {
+      background: var(--navy);
+      color: white;
+    }
+
+    .step-tab.complete {
+      background: #e1f1ea;
+      color: var(--green);
+    }
+
+    form {
+      display: grid;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .step {
+      display: none;
+      gap: 18px;
+    }
+
+    .step.active {
+      display: grid;
+    }
+
+    .section-head {
+      display: grid;
+      gap: 5px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid.two,
+    .grid.three {
+      grid-template-columns: 1fr;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      font-weight: 700;
+      color: #27364a;
+      font-size: 0.92rem;
+    }
+
+    label span {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+      color: #27364a;
+      font-weight: 800;
+    }
+
+    .check-row input {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      margin-top: 2px;
+      flex: 0 0 auto;
+      accent-color: var(--green);
+    }
+
+    .check-row small {
+      display: block;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #c9d2df;
+      border-radius: 8px;
+      padding: 12px 12px;
+      min-height: 46px;
+      color: var(--ink);
+      background: white;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 104px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(23, 107, 135, 0.12);
+    }
+
+    .row-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      background: #fbfcfe;
+    }
+
+    .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input-action {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .field-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .conditional-field {
+      display: none;
+    }
+
+    .conditional-field.active {
+      display: grid;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .preset-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .chip {
+      min-height: 40px;
+      border-radius: 999px;
+      padding: 0 12px;
+      background: #edf4f1;
+      color: var(--green);
+      font-weight: 800;
+      border: 1px solid #c8ded5;
+    }
+
+    .btn {
+      min-height: 44px;
+      border-radius: 8px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      text-decoration: none;
+      color: var(--ink);
+      background: #e8eef4;
+    }
+
+    .btn.primary {
+      background: var(--orange);
+      color: white;
+    }
+
+    .btn.primary:hover {
+      background: var(--orange-dark);
+    }
+
+    .btn.secondary {
+      background: var(--navy);
+      color: white;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--blue);
+      border: 1px solid #c4d3dc;
+    }
+
+    .btn.danger {
+      color: #96330d;
+      background: #fff0e8;
+    }
+
+    .form-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fbfcfe;
+      display: grid;
+      gap: 4px;
+    }
+
+    .summary-box strong {
+      color: var(--navy);
+    }
+
+    .generated {
+      min-height: 270px;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      line-height: 1.45;
+      font-size: 0.86rem;
+    }
+
+    .contact-links {
+      display: grid;
+      gap: 10px;
+    }
+
+    .contact-link-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .alert {
+      border-left: 4px solid var(--orange);
+      background: #fff7ef;
+      color: #5b2a08;
+      padding: 12px;
+      border-radius: 8px;
+      line-height: 1.4;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding: 0 18px 26px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      place-items: center;
+      background: rgba(12, 20, 30, 0.6);
+      padding: 14px;
+    }
+
+    .modal-backdrop.active {
+      display: grid;
+    }
+
+    .map-modal {
+      width: min(920px, 100%);
+      max-height: min(780px, 94vh);
+      display: grid;
+      grid-template-rows: auto minmax(330px, 58vh) auto;
+      overflow: hidden;
+      background: var(--paper);
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+    }
+
+    .modal-head,
+    .modal-foot {
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-foot {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .icon-close {
+      width: 42px;
+      min-height: 42px;
+      border-radius: 8px;
+      background: #eef3f7;
+      color: var(--navy);
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    #pinMap {
+      min-height: 330px;
+      background: #d8dee8;
+    }
+
+    .pin-readout {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    @media (min-width: 760px) {
+      main {
+        padding-top: 30px;
+      }
+
+      .workspace {
+        grid-template-columns: 0.92fr 1.35fr;
+        align-items: start;
+      }
+
+      .plan-header {
+        position: sticky;
+        top: 76px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .contact-link-row {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+
+      .input-action {
+        grid-template-columns: 1fr auto;
+        align-items: end;
+      }
+
+      .field-actions {
+        grid-template-columns: auto auto;
+      }
+
+      .preset-row {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar {
+        padding-inline: 12px;
+      }
+
+      .status-pill {
+        max-width: 46vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      main {
+        padding-inline: 12px;
+      }
+
+      .progress {
+        grid-template-columns: 1fr;
+      }
+
+      .step-tab {
+        justify-content: flex-start;
+      }
+
+      .form-nav {
+        position: sticky;
+        bottom: 0;
+        margin-inline: -18px;
+        padding: 12px 18px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+      }
+
+      .form-nav .btn {
+        flex: 1;
+      }
+
+      .field-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .map-modal {
+        grid-template-rows: auto minmax(360px, 62vh) auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="topbar">
+        <div class="brand">
+          <div class="mark" aria-hidden="true">FP</div>
+          <span>Float Plan</span>
+        </div>
+        <div class="status-pill" id="saveStatus">Draft not saved</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="workspace">
+        <section class="panel plan-header" aria-labelledby="app-title">
+          <div class="plan-heading">
+            <h1 id="app-title">Send a float plan before you launch.</h1>
+            <p class="muted">Fast enough for the dock. Complete enough for a search.</p>
+          </div>
+          <div class="route-visual" aria-hidden="true"></div>
+          <div class="summary-grid" id="quickSummary">
+            <div class="summary-box">
+              <strong>Trip</strong>
+              <span class="muted">No destination yet</span>
+            </div>
+            <div class="summary-box">
+              <strong>Return check</strong>
+              <span class="muted">No return time yet</span>
+            </div>
+            <div class="summary-box">
+              <strong>Recipients</strong>
+              <span class="muted">No contacts yet</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="Float plan builder">
+          <div class="progress" role="tablist" aria-label="Float plan sections">
+            <button class="step-tab active" type="button" data-step-target="0">Trip</button>
+            <button class="step-tab" type="button" data-step-target="1">People</button>
+            <button class="step-tab" type="button" data-step-target="2">Vessel</button>
+            <button class="step-tab" type="button" data-step-target="3">Contacts</button>
+            <button class="step-tab" type="button" data-step-target="4">Send</button>
+          </div>
+
+          <form id="floatPlanForm">
+            <div class="step active" data-step="0">
+              <div class="section-head">
+                <h2>Trip</h2>
+                <p class="muted">Launch point, route, and return time.</p>
+              </div>
+              <div class="grid two">
+                <label>Operator name
+                  <input name="operatorName" autocomplete="name" required placeholder="Full name">
+                </label>
+                <label>Operator phone
+                  <input name="operatorPhone" inputmode="tel" autocomplete="tel" required placeholder="Mobile number">
+                </label>
+              </div>
+              <div class="grid two">
+                <label>Activity
+                  <select name="activity" required>
+                    <option value="">Choose one</option>
+                    <option>Power boating</option>
+                    <option>Fishing</option>
+                    <option>Sailing</option>
+                    <option>Kayaking</option>
+                    <option>Canoeing</option>
+                    <option>Stand up paddling</option>
+                    <option>Personal watercraft</option>
+                    <option>Commercial work</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>People aboard
+                  <input name="peopleCount" type="number" min="1" step="1" value="1" required>
+                </label>
+              </div>
+              <label>Launch pin or site
+                <div class="input-action">
+                  <input name="launchSite" required placeholder="Ramp, marina, beach, access point, or GPS pin">
+                  <div class="field-actions">
+                    <button type="button" class="btn secondary map-button" data-location-target="launchSite" data-map-title="Launch pin">Drop pin</button>
+                    <button type="button" class="btn ghost location-button" data-location-target="launchSite">Use my location</button>
+                  </div>
+                </div>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" name="differentReturnSite" id="differentReturnSite">
+                <span>I'm ending somewhere different
+                  <small>Leave this off when you plan to return to the launch site.</small>
+                </span>
+              </label>
+              <label class="conditional-field" id="returnSiteWrap">Return or stop pin
+                <div class="input-action">
+                  <input name="returnSite" placeholder="Same ramp, take-out point, marina, dock, or GPS pin">
+                  <div class="inline-actions">
+                    <button type="button" class="btn secondary map-button" data-location-target="returnSite" data-map-title="Return or stop pin">Drop pin</button>
+                    <button type="button" class="btn ghost location-button" data-location-target="returnSite">Use my location</button>
+                  </div>
+                </div>
+              </label>
+              <label>Destination or operating area
+                <input name="destination" required placeholder="Lake, bay, river section, offshore area">
+              </label>
+              <label>Route and waypoints
+                <textarea name="route" placeholder="Planned route, stops, hazards, alternate take-out, fishing spots"></textarea>
+              </label>
+              <div class="section-head">
+                <h3>Timing</h3>
+                <p class="muted">Pick a launch time and trip length. The return check is calculated for you.</p>
+              </div>
+              <div class="time-grid">
+                <label>Launch date
+                  <input name="departureDate" type="date" required>
+                </label>
+                <label>Launch time
+                  <input name="departureClock" type="time" required>
+                </label>
+              </div>
+              <div class="preset-row" aria-label="Quick departure times">
+                <button type="button" class="chip departure-preset" data-departure-minutes="0">Now</button>
+                <button type="button" class="chip departure-preset" data-departure-minutes="30">+30 min</button>
+                <button type="button" class="chip departure-preset" data-departure-minutes="60">+1 hr</button>
+                <button type="button" class="chip departure-preset" data-departure-minutes="120">+2 hr</button>
+                <button type="button" class="chip departure-preset" data-departure-next-morning="true">Tomorrow AM</button>
+              </div>
+              <label>Planned time on water
+                <select name="durationMinutes" required>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                  <option value="180" selected>3 hours</option>
+                  <option value="240">4 hours</option>
+                  <option value="360">6 hours</option>
+                  <option value="480">8 hours</option>
+                  <option value="720">12 hours</option>
+                  <option value="custom">Custom return time</option>
+                </select>
+              </label>
+              <label id="customReturnWrap">Expected return
+                <input name="customReturnTime" type="datetime-local">
+              </label>
+              <div class="grid two" hidden>
+                <label>Departure
+                  <input name="departureTime" type="datetime-local">
+                </label>
+                <label>Expected return
+                  <input name="returnTime" type="datetime-local">
+                </label>
+              </div>
+              <div class="summary-box">
+                <strong>Calculated return check</strong>
+                <span class="muted" id="calculatedReturn">Not set yet</span>
+              </div>
+              <label>Weather or water notes
+                <textarea name="conditions" placeholder="Forecast concerns, tide/current, water temperature, visibility"></textarea>
+              </label>
+            </div>
+
+            <div class="step" data-step="1">
+              <div class="section-head">
+                <h2>People</h2>
+                <p class="muted">Crew, passengers, and medical notes.</p>
+              </div>
+              <div id="peopleList" class="row-list"></div>
+              <div class="inline-actions">
+                <button type="button" class="btn ghost" id="addPerson">Add person</button>
+              </div>
+            </div>
+
+            <div class="step" data-step="2">
+              <div class="section-head">
+                <h2>Vessel</h2>
+                <p class="muted">Boat, paddlecraft, PWC, or work vessel.</p>
+              </div>
+              <div class="grid two">
+                <label>Vessel type
+                  <select name="vesselType">
+                    <option value="">Choose one</option>
+                    <option>Open motorboat</option>
+                    <option>Cabin motorboat</option>
+                    <option>Pontoon</option>
+                    <option>Sailboat</option>
+                    <option>Kayak</option>
+                    <option>Canoe</option>
+                    <option>Stand up paddleboard</option>
+                    <option>Personal watercraft</option>
+                    <option>Commercial vessel</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>Vessel name
+                  <input name="vesselName" placeholder="Name or none">
+                </label>
+              </div>
+              <div class="grid three">
+                <label>Length
+                  <input name="vesselLength" placeholder="18 ft">
+                </label>
+                <label>Color
+                  <input name="vesselColor" placeholder="White hull, blue top">
+                </label>
+                <label>Registration
+                  <input name="registration" placeholder="State registration or documentation">
+                </label>
+              </div>
+              <div class="grid two">
+                <label>Propulsion
+                  <input name="propulsion" placeholder="Outboard, sail, paddle, jet drive">
+                </label>
+                <label>Fuel range or battery
+                  <input name="range" placeholder="Approximate range">
+                </label>
+              </div>
+              <label>Safety gear
+                <textarea name="safetyGear" placeholder="Life jackets, VHF, PLB/EPIRB, flares, lights, first aid, anchor, bilge pump"></textarea>
+              </label>
+              <div class="grid two">
+                <label>Beacon IDs
+                  <input name="beacons" placeholder="EPIRB, PLB, AIS MOB, satellite messenger">
+                </label>
+                <label>Trailer or vehicle
+                  <input name="vehicle" placeholder="Tow vehicle, plate, parking location">
+                </label>
+              </div>
+              <label>Vessel photo link
+                <input name="photoLink" inputmode="url" placeholder="URL for now; native app will support camera upload">
+              </label>
+            </div>
+
+            <div class="step" data-step="3">
+              <div class="section-head">
+                <h2>Contacts</h2>
+                <p class="muted">People who should hold the plan.</p>
+              </div>
+              <div id="contactList" class="row-list"></div>
+              <div class="inline-actions">
+                <button type="button" class="btn ghost" id="addContact">Add contact</button>
+              </div>
+              <div class="alert">
+                The Coast Guard does not accept float plans before a trip. Send this to someone you trust, then close it with them when you return.
+              </div>
+            </div>
+
+            <div class="step" data-step="4">
+              <div class="section-head">
+                <h2>Send</h2>
+                <p class="muted">Review, send, and set your safe-return prompt.</p>
+              </div>
+              <label>Generated float plan
+                <textarea id="generatedPlan" class="generated" readonly></textarea>
+              </label>
+              <div class="alert">
+                Static test mode opens the user's SMS or email app with the plan filled in. The user still taps send. Automatic delivery, delivery status, and overdue escalation require a backend service.
+              </div>
+              <div class="inline-actions">
+                <button type="button" class="btn secondary" id="copyPlan">Copy plan</button>
+                <a class="btn primary" id="emailAll" href="#">Email plan</a>
+                <button type="button" class="btn ghost" id="reminderButton">Set return prompt</button>
+                <button type="button" class="btn ghost" id="safeButton">I'm home safe</button>
+              </div>
+              <div id="contactLinks" class="contact-links"></div>
+            </div>
+
+            <div class="form-nav">
+              <button type="button" class="btn" id="prevStep">Back</button>
+              <button type="button" class="btn primary" id="nextStep">Next</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+    <p class="footer-note">Prototype stores drafts only in this browser.</p>
+  </div>
+
+  <div class="modal-backdrop" id="mapModal" aria-hidden="true">
+    <section class="map-modal" role="dialog" aria-modal="true" aria-labelledby="mapModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="mapModalTitle">Drop pin</h2>
+          <p class="muted">Tap the map to place the pin.</p>
+        </div>
+        <button type="button" class="icon-close" id="closeMap" aria-label="Close map">x</button>
+      </div>
+      <div id="pinMap" aria-label="Satellite map pin picker"></div>
+      <div class="modal-foot">
+        <span class="pin-readout" id="pinReadout">No pin selected</span>
+        <div class="inline-actions">
+          <button type="button" class="btn ghost" id="mapUseLocation">Use my location</button>
+          <button type="button" class="btn primary" id="savePin">Save pin</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <template id="personTemplate">
+    <div class="mini-card person-card">
+      <div class="grid two">
+        <label>Name
+          <input data-person-field="name" placeholder="Passenger name">
+        </label>
+        <label>Phone
+          <input data-person-field="phone" inputmode="tel" placeholder="Mobile number">
+        </label>
+      </div>
+      <div class="grid two">
+        <label>Age
+          <input data-person-field="age" inputmode="numeric" placeholder="Optional">
+        </label>
+        <label>PFD color
+          <input data-person-field="pfd" placeholder="Optional">
+        </label>
+      </div>
+      <label>Medical notes
+        <input data-person-field="notes" placeholder="Optional">
+      </label>
+      <button type="button" class="btn danger remove-row">Remove</button>
+    </div>
+  </template>
+
+  <template id="contactTemplate">
+    <div class="mini-card contact-card">
+      <div class="grid two">
+        <label>Name
+          <input data-contact-field="name" placeholder="Contact name">
+        </label>
+        <label>Phone
+          <input data-contact-field="phone" inputmode="tel" placeholder="SMS number">
+        </label>
+      </div>
+      <div class="grid two">
+        <label>Email
+          <input data-contact-field="email" inputmode="email" placeholder="Email address">
+        </label>
+        <label>Relationship
+          <input data-contact-field="relationship" placeholder="Spouse, friend, dockmaster">
+        </label>
+      </div>
+      <button type="button" class="btn danger remove-row">Remove</button>
+    </div>
+  </template>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const STORAGE_KEY = "float-plan-mvp-draft";
+    const steps = Array.from(document.querySelectorAll(".step"));
+    const tabs = Array.from(document.querySelectorAll(".step-tab"));
+    const form = document.getElementById("floatPlanForm");
+    const saveStatus = document.getElementById("saveStatus");
+    const peopleList = document.getElementById("peopleList");
+    const contactList = document.getElementById("contactList");
+    const generatedPlan = document.getElementById("generatedPlan");
+    const contactLinks = document.getElementById("contactLinks");
+    const emailAll = document.getElementById("emailAll");
+    const customReturnWrap = document.getElementById("customReturnWrap");
+    const calculatedReturn = document.getElementById("calculatedReturn");
+    const differentReturnSite = document.getElementById("differentReturnSite");
+    const returnSiteWrap = document.getElementById("returnSiteWrap");
+    const mapModal = document.getElementById("mapModal");
+    const mapModalTitle = document.getElementById("mapModalTitle");
+    const pinReadout = document.getElementById("pinReadout");
+    const prevStep = document.getElementById("prevStep");
+    const nextStep = document.getElementById("nextStep");
+    let currentStep = 0;
+    let reminderTimer = null;
+    let pinMap = null;
+    let pinMarker = null;
+    let activeMapTarget = null;
+    let selectedPin = null;
+
+    const defaults = {
+      people: [{ name: "", phone: "", age: "", pfd: "", notes: "" }],
+      contacts: [{ name: "", phone: "", email: "", relationship: "" }]
+    };
+
+    function loadDraft() {
+      try {
+        return { ...defaults, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}) };
+      } catch {
+        return { ...defaults };
+      }
+    }
+
+    function getFormData() {
+      syncComputedTimes();
+      syncReturnSite();
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.differentReturnSite = differentReturnSite.checked;
+      if (!data.differentReturnSite) data.returnSite = data.launchSite;
+      data.people = Array.from(peopleList.querySelectorAll(".person-card")).map(card => rowData(card, "person"));
+      data.contacts = Array.from(contactList.querySelectorAll(".contact-card")).map(card => rowData(card, "contact"));
+      return data;
+    }
+
+    function rowData(card, type) {
+      return Object.fromEntries(
+        Array.from(card.querySelectorAll(`[data-${type}-field]`)).map(input => [
+          input.dataset[`${type}Field`],
+          input.value.trim()
+        ])
+      );
+    }
+
+    function saveDraft() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormData()));
+      saveStatus.textContent = `Saved ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+      updateGeneratedPlan();
+      updateSummary();
+    }
+
+    function fillForm(data) {
+      Object.entries(data).forEach(([key, value]) => {
+        if (Array.isArray(value)) return;
+        const field = form.elements[key];
+        if (field) field.value = value;
+      });
+
+      if (data.departureTime && (!form.elements.departureDate.value || !form.elements.departureClock.value)) {
+        const departure = new Date(data.departureTime);
+        if (!Number.isNaN(departure.getTime())) {
+          form.elements.departureDate.value = toDateValue(departure);
+          form.elements.departureClock.value = toTimeValue(departure);
+        }
+      }
+
+      if (data.returnTime && !form.elements.customReturnTime.value && data.durationMinutes === "custom") {
+        form.elements.customReturnTime.value = toDateTimeLocalValue(new Date(data.returnTime));
+      }
+
+      peopleList.innerHTML = "";
+      (data.people?.length ? data.people : defaults.people).forEach(person => addRow("person", person));
+      contactList.innerHTML = "";
+      (data.contacts?.length ? data.contacts : defaults.contacts).forEach(contact => addRow("contact", contact));
+      ensureTimingDefaults();
+      syncComputedTimes();
+      syncReturnSite();
+      updateGeneratedPlan();
+      updateSummary();
+    }
+
+    function addRow(type, values = {}) {
+      const template = document.getElementById(`${type}Template`);
+      const node = template.content.firstElementChild.cloneNode(true);
+      const list = type === "person" ? peopleList : contactList;
+      node.querySelectorAll(`[data-${type}-field]`).forEach(input => {
+        input.value = values[input.dataset[`${type}Field`]] || "";
+      });
+      node.querySelector(".remove-row").addEventListener("click", () => {
+        node.remove();
+        saveDraft();
+      });
+      list.appendChild(node);
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "Not provided";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function toDateValue(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+
+    function toTimeValue(date) {
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    }
+
+    function toDateTimeLocalValue(date) {
+      return `${toDateValue(date)}T${toTimeValue(date)}`;
+    }
+
+    function roundToNextFive(date) {
+      const rounded = new Date(date);
+      rounded.setSeconds(0, 0);
+      const remainder = rounded.getMinutes() % 5;
+      if (remainder) rounded.setMinutes(rounded.getMinutes() + (5 - remainder));
+      return rounded;
+    }
+
+    function ensureTimingDefaults() {
+      const departureDate = form.elements.departureDate;
+      const departureClock = form.elements.departureClock;
+      if (!departureDate.value || !departureClock.value) {
+        const now = roundToNextFive(new Date());
+        departureDate.value ||= toDateValue(now);
+        departureClock.value ||= toTimeValue(now);
+      }
+    }
+
+    function getDepartureDate() {
+      const { departureDate, departureClock } = form.elements;
+      if (!departureDate.value || !departureClock.value) return null;
+      const date = new Date(`${departureDate.value}T${departureClock.value}`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function syncComputedTimes() {
+      const departure = getDepartureDate();
+      const duration = form.elements.durationMinutes.value;
+      customReturnWrap.style.display = duration === "custom" ? "grid" : "none";
+
+      if (!departure) {
+        form.elements.departureTime.value = "";
+        form.elements.returnTime.value = "";
+        calculatedReturn.textContent = "Not set yet";
+        return;
+      }
+
+      form.elements.departureTime.value = toDateTimeLocalValue(departure);
+      let returnDate = null;
+      if (duration === "custom") {
+        returnDate = form.elements.customReturnTime.value ? new Date(form.elements.customReturnTime.value) : null;
+      } else {
+        returnDate = new Date(departure.getTime() + Number(duration || 0) * 60 * 1000);
+      }
+
+      if (returnDate && !Number.isNaN(returnDate.getTime())) {
+        form.elements.returnTime.value = toDateTimeLocalValue(returnDate);
+        calculatedReturn.textContent = formatDateTime(form.elements.returnTime.value);
+      } else {
+        form.elements.returnTime.value = "";
+        calculatedReturn.textContent = "Add a custom return time";
+      }
+    }
+
+    function setDepartureFromNow(minutes) {
+      const date = roundToNextFive(new Date(Date.now() + minutes * 60 * 1000));
+      form.elements.departureDate.value = toDateValue(date);
+      form.elements.departureClock.value = toTimeValue(date);
+      saveDraft();
+    }
+
+    function setTomorrowMorning() {
+      const date = new Date();
+      date.setDate(date.getDate() + 1);
+      date.setHours(8, 0, 0, 0);
+      form.elements.departureDate.value = toDateValue(date);
+      form.elements.departureClock.value = toTimeValue(date);
+      saveDraft();
+    }
+
+    function captureLocation(targetName) {
+      if (!navigator.geolocation) {
+        alert("Location capture is not available in this browser.");
+        return;
+      }
+
+      saveStatus.textContent = "Getting location...";
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setLocationField(targetName, latitude, longitude, accuracy);
+        saveDraft();
+      }, () => {
+        alert("Location permission was denied or unavailable.");
+        saveStatus.textContent = "Location unavailable";
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000
+      });
+    }
+
+    function syncReturnSite() {
+      const showingReturn = differentReturnSite.checked;
+      returnSiteWrap.classList.toggle("active", showingReturn);
+      form.elements.returnSite.required = showingReturn;
+      if (!showingReturn) {
+        form.elements.returnSite.value = form.elements.launchSite.value;
+      }
+    }
+
+    function openMapPicker(targetName, title) {
+      if (!window.L) {
+        alert("The map could not load. Use current location or type the ramp/site instead.");
+        return;
+      }
+
+      activeMapTarget = targetName;
+      mapModalTitle.textContent = title || "Drop pin";
+      mapModal.classList.add("active");
+      mapModal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      initializeMap();
+
+      const targetCoords = parseCoords(form.elements[targetName].value);
+      const launchCoords = parseCoords(form.elements.launchSite.value);
+      const coords = targetCoords || launchCoords;
+      if (coords) {
+        setMapPin(coords.lat, coords.lon);
+        pinMap.setView([coords.lat, coords.lon], 15);
+      } else {
+        selectedPin = null;
+        if (pinMarker) {
+          pinMarker.remove();
+          pinMarker = null;
+        }
+        pinReadout.textContent = "No pin selected";
+        pinMap.setView([39.8283, -98.5795], 4);
+      }
+
+      setTimeout(() => pinMap.invalidateSize(), 50);
+    }
+
+    function closeMapPicker() {
+      mapModal.classList.remove("active");
+      mapModal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }
+
+    function initializeMap() {
+      if (pinMap) return;
+
+      pinMap = L.map("pinMap", {
+        zoomControl: true,
+        attributionControl: true
+      }).setView([39.8283, -98.5795], 4);
+
+      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri"
+      }).addTo(pinMap);
+
+      pinMap.on("click", event => {
+        setMapPin(event.latlng.lat, event.latlng.lng);
+      });
+    }
+
+    function setMapPin(lat, lon) {
+      selectedPin = { lat, lon };
+      const latLng = [lat, lon];
+      if (!pinMarker) {
+        pinMarker = L.marker(latLng, { draggable: true }).addTo(pinMap);
+        pinMarker.on("dragend", event => {
+          const next = event.target.getLatLng();
+          setMapPin(next.lat, next.lng);
+        });
+      } else {
+        pinMarker.setLatLng(latLng);
+      }
+      pinReadout.textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    }
+
+    function saveMapPin() {
+      if (!activeMapTarget || !selectedPin) {
+        alert("Tap the map or use your location to choose a pin.");
+        return;
+      }
+
+      setLocationField(activeMapTarget, selectedPin.lat, selectedPin.lon);
+      closeMapPicker();
+      saveDraft();
+    }
+
+    function useLocationInMap() {
+      if (!navigator.geolocation) {
+        alert("Location capture is not available in this browser.");
+        return;
+      }
+
+      pinReadout.textContent = "Getting location...";
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+        setMapPin(latitude, longitude);
+        pinMap.setView([latitude, longitude], 16);
+      }, () => {
+        alert("Location permission was denied or unavailable.");
+        pinReadout.textContent = selectedPin ? `${selectedPin.lat.toFixed(5)}, ${selectedPin.lon.toFixed(5)}` : "No pin selected";
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000
+      });
+    }
+
+    function setLocationField(targetName, lat, lon, accuracy = null) {
+      const latitude = lat.toFixed(5);
+      const longitude = lon.toFixed(5);
+      const maps = `https://maps.google.com/?q=${latitude},${longitude}`;
+      const accuracyText = accuracy === null ? "" : ` (${Math.round(accuracy)}m)`;
+      form.elements[targetName].value = `GPS ${latitude}, ${longitude}${accuracyText} ${maps}`;
+    }
+
+    function parseCoords(value) {
+      const match = String(value || "").match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+      if (!match) return null;
+      const lat = Number(match[1]);
+      const lon = Number(match[2]);
+      if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+      return { lat, lon };
+    }
+
+    function listPeople(people) {
+      const rows = people.filter(person => Object.values(person).some(Boolean));
+      if (!rows.length) return "No passenger detail provided.";
+      return rows.map((person, index) => {
+        const bits = [
+          person.name || `Person ${index + 1}`,
+          person.phone && `phone ${person.phone}`,
+          person.age && `age ${person.age}`,
+          person.pfd && `PFD ${person.pfd}`,
+          person.notes && `notes ${person.notes}`
+        ].filter(Boolean);
+        return `- ${bits.join("; ")}`;
+      }).join("\n");
+    }
+
+    function listContacts(contacts) {
+      const rows = contacts.filter(contact => Object.values(contact).some(Boolean));
+      if (!rows.length) return "No emergency contacts provided.";
+      return rows.map(contact => {
+        const bits = [
+          contact.name || "Contact",
+          contact.relationship,
+          contact.phone && `phone ${contact.phone}`,
+          contact.email && `email ${contact.email}`
+        ].filter(Boolean);
+        return `- ${bits.join("; ")}`;
+      }).join("\n");
+    }
+
+    function buildPlan(data) {
+      return `FLOAT PLAN
+
+Operator: ${data.operatorName || "Not provided"}
+Operator phone: ${data.operatorPhone || "Not provided"}
+Activity: ${data.activity || "Not provided"}
+People aboard: ${data.peopleCount || "Not provided"}
+
+TRIP
+Launch site: ${data.launchSite || "Not provided"}
+Return plan: ${data.differentReturnSite ? "Ending somewhere different" : "Returning to launch site"}
+Return or stop site: ${data.returnSite || data.launchSite || "Not provided"}
+Destination or area: ${data.destination || "Not provided"}
+Departure: ${formatDateTime(data.departureTime)}
+Expected return: ${formatDateTime(data.returnTime)}
+Planned time on water: ${data.durationMinutes === "custom" ? "Custom return time" : `${Number(data.durationMinutes || 0) / 60} hours`}
+Route and waypoints: ${data.route || "Not provided"}
+Weather or water notes: ${data.conditions || "Not provided"}
+
+PEOPLE
+${listPeople(data.people)}
+
+VESSEL
+Type: ${data.vesselType || "Not provided"}
+Name: ${data.vesselName || "Not provided"}
+Length: ${data.vesselLength || "Not provided"}
+Color: ${data.vesselColor || "Not provided"}
+Registration: ${data.registration || "Not provided"}
+Propulsion: ${data.propulsion || "Not provided"}
+Fuel range or battery: ${data.range || "Not provided"}
+Safety gear: ${data.safetyGear || "Not provided"}
+Beacon IDs: ${data.beacons || "Not provided"}
+Trailer or vehicle: ${data.vehicle || "Not provided"}
+Vessel photo: ${data.photoLink || "Not provided"}
+
+EMERGENCY CONTACTS
+${listContacts(data.contacts)}
+
+IF OVERDUE
+1. Try to call and text the operator.
+2. If there is genuine concern, call 911 or the appropriate local Coast Guard/search and rescue authority.
+3. Provide this float plan, the expected return time, route, vessel description, vehicle details, and last known contact.
+4. If you are on the water and able to radio, use VHF Channel 16 for distress or urgent marine assistance.
+
+This plan is held by trusted contacts. The U.S. Coast Guard does not accept float plans before departure.`;
+    }
+
+    function updateGeneratedPlan() {
+      const data = getFormData();
+      const plan = buildPlan(data);
+      generatedPlan.value = plan;
+
+      const subject = encodeURIComponent(`Float plan: ${data.destination || "Trip"}`);
+      const body = encodeURIComponent(plan);
+      const emails = data.contacts.map(contact => contact.email).filter(Boolean).join(",");
+      emailAll.href = `mailto:${emails}?subject=${subject}&body=${body}`;
+      renderContactLinks(data, plan);
+    }
+
+    function renderContactLinks(data, plan) {
+      contactLinks.innerHTML = "";
+      const contacts = data.contacts.filter(contact => contact.phone || contact.email);
+      if (!contacts.length) return;
+
+      contacts.forEach(contact => {
+        const row = document.createElement("div");
+        row.className = "contact-link-row";
+        const label = document.createElement("strong");
+        label.textContent = contact.name || contact.phone || contact.email;
+        const actions = document.createElement("div");
+        actions.className = "inline-actions";
+
+        if (contact.phone) {
+          const sms = document.createElement("a");
+          sms.className = "btn primary";
+          sms.href = smsHref(contact.phone, plan);
+          sms.textContent = "SMS";
+          actions.appendChild(sms);
+        }
+
+        if (contact.email) {
+          const email = document.createElement("a");
+          email.className = "btn secondary";
+          email.href = `mailto:${encodeURIComponent(contact.email)}?subject=${encodeURIComponent("Float plan")}&body=${encodeURIComponent(plan)}`;
+          email.textContent = "Email";
+          actions.appendChild(email);
+        }
+
+        row.append(label, actions);
+        contactLinks.appendChild(row);
+      });
+    }
+
+    function smsHref(phone, message) {
+      const separator = /iPad|iPhone|iPod/.test(navigator.userAgent) ? "&" : "?";
+      return `sms:${encodeURIComponent(phone)}${separator}body=${encodeURIComponent(message)}`;
+    }
+
+    function updateSummary() {
+      const data = getFormData();
+      const summary = document.getElementById("quickSummary");
+      summary.replaceChildren(
+        summaryBox("Trip", data.destination || "No destination yet"),
+        summaryBox("Return check", formatDateTime(data.returnTime)),
+        summaryBox("Recipients", `${data.contacts.filter(contact => contact.phone || contact.email).length || "No"} contacts`)
+      );
+    }
+
+    function summaryBox(title, value) {
+      const box = document.createElement("div");
+      box.className = "summary-box";
+      const strong = document.createElement("strong");
+      strong.textContent = title;
+      const span = document.createElement("span");
+      span.className = "muted";
+      span.textContent = value;
+      box.append(strong, span);
+      return box;
+    }
+
+    function showStep(index) {
+      currentStep = Math.max(0, Math.min(index, steps.length - 1));
+      steps.forEach((step, stepIndex) => step.classList.toggle("active", stepIndex === currentStep));
+      tabs.forEach((tab, tabIndex) => {
+        tab.classList.toggle("active", tabIndex === currentStep);
+        tab.classList.toggle("complete", tabIndex < currentStep);
+      });
+      prevStep.disabled = currentStep === 0;
+      nextStep.textContent = currentStep === steps.length - 1 ? "Update plan" : "Next";
+      updateGeneratedPlan();
+    }
+
+    function currentStepValid() {
+      syncReturnSite();
+      const fields = Array.from(steps[currentStep].querySelectorAll("input, select, textarea"));
+      const nativeValid = fields.every(field => !field.required || field.reportValidity());
+      if (!nativeValid) return false;
+      if (currentStep === 0 && form.elements.durationMinutes.value === "custom" && !form.elements.customReturnTime.value) {
+        form.elements.customReturnTime.reportValidity();
+        alert("Add an expected return time or choose a planned time on water.");
+        return false;
+      }
+      return true;
+    }
+
+    async function copyPlan() {
+      updateGeneratedPlan();
+      await copyText(generatedPlan.value);
+      saveStatus.textContent = "Plan copied";
+    }
+
+    async function copyText(value) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        return;
+      }
+      generatedPlan.focus();
+      generatedPlan.select();
+      document.execCommand("copy");
+    }
+
+    async function setReminder() {
+      const data = getFormData();
+      const returnTime = new Date(data.returnTime);
+      if (!data.returnTime || Number.isNaN(returnTime.getTime())) {
+        alert("Add an expected return time first.");
+        return;
+      }
+
+      const reminderTime = returnTime.getTime() - 30 * 60 * 1000;
+      const delay = Math.max(0, reminderTime - Date.now());
+      if ("Notification" in window && Notification.permission !== "granted") {
+        await Notification.requestPermission();
+      }
+      clearTimeout(reminderTimer);
+      reminderTimer = setTimeout(() => {
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("Float Plan return check", {
+            body: "Send your safe-return message or update your contacts."
+          });
+        } else {
+          alert("Float Plan return check: send your safe-return message or update your contacts.");
+        }
+      }, delay);
+      saveStatus.textContent = "Return prompt set";
+    }
+
+    async function safeMessage() {
+      const data = getFormData();
+      const message = `I am home safe from my ${data.activity || "water"} trip to ${data.destination || "the planned area"}. Please close my float plan.`;
+      const contacts = data.contacts.filter(contact => contact.phone || contact.email);
+      if (!contacts.length) {
+        await copyText(message);
+        saveStatus.textContent = "Safe message copied";
+        return;
+      }
+      const first = contacts[0];
+      if (first.phone) {
+        window.location.href = smsHref(first.phone, message);
+      } else {
+        window.location.href = `mailto:${encodeURIComponent(first.email)}?subject=${encodeURIComponent("Home safe")}&body=${encodeURIComponent(message)}`;
+      }
+    }
+
+    form.addEventListener("input", saveDraft);
+    form.elements.durationMinutes.addEventListener("change", () => {
+      if (form.elements.durationMinutes.value === "custom" && !form.elements.customReturnTime.value) {
+        const departure = getDepartureDate();
+        if (departure) {
+          form.elements.customReturnTime.value = toDateTimeLocalValue(new Date(departure.getTime() + 3 * 60 * 60 * 1000));
+        }
+      }
+      saveDraft();
+    });
+    document.querySelectorAll(".departure-preset").forEach(button => {
+      button.addEventListener("click", () => {
+        if (button.dataset.departureNextMorning) {
+          setTomorrowMorning();
+        } else {
+          setDepartureFromNow(Number(button.dataset.departureMinutes || 0));
+        }
+      });
+    });
+    document.querySelectorAll(".location-button").forEach(button => {
+      button.addEventListener("click", () => captureLocation(button.dataset.locationTarget));
+    });
+    document.querySelectorAll(".map-button").forEach(button => {
+      button.addEventListener("click", () => openMapPicker(button.dataset.locationTarget, button.dataset.mapTitle));
+    });
+    differentReturnSite.addEventListener("change", () => {
+      if (differentReturnSite.checked && form.elements.returnSite.value === form.elements.launchSite.value) {
+        form.elements.returnSite.value = "";
+      }
+      saveDraft();
+    });
+    document.getElementById("closeMap").addEventListener("click", closeMapPicker);
+    document.getElementById("savePin").addEventListener("click", saveMapPin);
+    document.getElementById("mapUseLocation").addEventListener("click", useLocationInMap);
+    mapModal.addEventListener("click", event => {
+      if (event.target === mapModal) closeMapPicker();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && mapModal.classList.contains("active")) closeMapPicker();
+    });
+    document.getElementById("addPerson").addEventListener("click", () => {
+      addRow("person");
+      saveDraft();
+    });
+    document.getElementById("addContact").addEventListener("click", () => {
+      addRow("contact");
+      saveDraft();
+    });
+    document.getElementById("copyPlan").addEventListener("click", copyPlan);
+    document.getElementById("reminderButton").addEventListener("click", setReminder);
+    document.getElementById("safeButton").addEventListener("click", safeMessage);
+    prevStep.addEventListener("click", () => showStep(currentStep - 1));
+    nextStep.addEventListener("click", () => {
+      if (!currentStepValid()) return;
+      if (currentStep === steps.length - 1) {
+        saveDraft();
+      } else {
+        showStep(currentStep + 1);
+      }
+    });
+    tabs.forEach(tab => tab.addEventListener("click", () => showStep(Number(tab.dataset.stepTarget))));
+
+    fillForm(loadDraft());
+    showStep(0);
+  </script>
+</body>
+</html>
