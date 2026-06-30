@@ -57,12 +57,12 @@ Use:
 
 `supabase/functions/send-float-plan/sample-payload.json`
 
-Expected response shape:
+Verified response shape:
 
 ```json
 {
   "ok": true,
-  "floatPlanId": "...",
+  "floatPlanId": "3e017d7b-9661-472e-9886-dd36069c4660",
   "status": "queued_for_delivery",
   "deliveryEnabled": false,
   "recipientCount": 1,
@@ -75,3 +75,15 @@ After a successful test, confirm rows exist in:
 - `float_plans`
 - `float_plan_recipients`
 - `delivery_events`
+
+Verified in the development project on June 30, 2026.
+
+## Static Prototype Integration
+
+The static prototype calls the deployed function from the Send step with the `Save to backend` button.
+
+The browser sends the hidden `#generatedPayload` JSON to:
+
+`https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan`
+
+The anon public key is used for the request headers. The service role key remains server-side inside Supabase.

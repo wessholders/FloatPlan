@@ -553,6 +553,22 @@
       line-height: 1.4;
     }
 
+    .backend-status {
+      min-height: 22px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .backend-status.success {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .backend-status.error {
+      color: #96330d;
+      font-weight: 700;
+    }
+
     .footer-note {
       text-align: center;
       color: var(--muted);
@@ -975,11 +991,13 @@
                 Static test mode opens the user's SMS or email app with the plan filled in. The user still taps send. Automatic delivery, delivery status, and overdue escalation require a backend service.
               </div>
               <div class="inline-actions">
+                <button type="button" class="btn primary" id="saveBackend">Save to backend</button>
                 <button type="button" class="btn secondary" id="copyPlan">Copy plan</button>
                 <a class="btn primary" id="emailAll" href="#">Email plan</a>
                 <button type="button" class="btn ghost" id="reminderButton">Set return prompt</button>
                 <button type="button" class="btn ghost" id="safeButton">I'm home safe</button>
               </div>
+              <div id="backendStatus" class="backend-status" aria-live="polite"></div>
               <div id="contactLinks" class="contact-links"></div>
             </div>
 
@@ -1065,6 +1083,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const STORAGE_KEY = "float-plan-mvp-draft";
+    const SUPABASE_FUNCTION_URL = "https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY213bGZhYnlweHFscXRuam9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzY5MTQsImV4cCI6MjA5ODQxMjkxNH0.5MtTudfA0yRzuUh2LCdC8-8LCbYO-_THzb8zPqtpcUA";
     const steps = Array.from(document.querySelectorAll(".step"));
     const tabs = Array.from(document.querySelectorAll(".step-tab"));
     const form = document.getElementById("floatPlanForm");
@@ -1075,6 +1095,8 @@
     const generatedPayload = document.getElementById("generatedPayload");
     const generatedPlanPreview = document.getElementById("generatedPlanPreview");
     const contactLinks = document.getElementById("contactLinks");
+    const backendStatus = document.getElementById("backendStatus");
+    const saveBackend = document.getElementById("saveBackend");
     const emailAll = document.getElementById("emailAll");
     const calculatedReturn = document.getElementById("calculatedReturn");
     const returnSiteWrap = document.getElementById("returnSiteWrap");
@@ -1092,6 +1114,7 @@
     let pinMarker = null;
     let activeMapTarget = null;
     let selectedPin = null;
+    let backendSavedPayload = "";
 
     const defaults = {
       people: [{ name: "", phone: "", age: "", pfd: "", notes: "" }],
@@ -1141,6 +1164,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormData()));
       saveStatus.textContent = `Saved ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
       updateGeneratedPlan();
+      markBackendDraftDirty();
       updateSummary();
     }
 
@@ -1150,6 +1174,8 @@
 
       localStorage.removeItem(STORAGE_KEY);
       form.reset();
+      backendSavedPayload = "";
+      setBackendStatus("", "");
       fillForm(freshDraft());
       showStep(0);
       saveStatus.textContent = "Plan cleared";
@@ -1951,6 +1977,82 @@ This plan is held by trusted contacts.`;
       saveStatus.textContent = "Plan copied";
     }
 
+    async function savePlanToBackend() {
+      if (!allRequiredFieldsValid()) return;
+
+      updateGeneratedPlan();
+      setBackendStatus("Saving float plan...", "");
+      saveBackend.disabled = true;
+
+      try {
+        const response = await fetch(SUPABASE_FUNCTION_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: generatedPayload.value
+        });
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || `Backend save failed (${response.status})`);
+        }
+
+        setBackendStatus(`Saved to backend. Plan ID: ${result.floatPlanId}`, "success");
+        backendSavedPayload = generatedPayload.value;
+        saveStatus.textContent = "Backend saved";
+      } catch (error) {
+        setBackendStatus(error.message || "Backend save failed", "error");
+        saveStatus.textContent = "Backend save failed";
+      } finally {
+        saveBackend.disabled = false;
+      }
+    }
+
+    function allRequiredFieldsValid() {
+      syncReturnSite();
+      syncComputedTimes();
+
+      const startingStep = currentStep;
+      for (let stepIndex = 0; stepIndex < steps.length; stepIndex += 1) {
+        showStep(stepIndex);
+        const fields = Array.from(steps[stepIndex].querySelectorAll("input, select, textarea"));
+        const nativeValid = fields.every(field => !field.required || field.reportValidity());
+        if (!nativeValid) return false;
+      }
+      showStep(startingStep);
+
+      const departure = getDepartureDate();
+      const expectedReturn = getReturnDate();
+      if (departure && expectedReturn && expectedReturn <= departure) {
+        alert("Expected return must be after departure.");
+        showStep(0);
+        return false;
+      }
+
+      const contacts = getFormData().contacts.filter(contact => contact.phone || contact.email);
+      if (!contacts.length) {
+        alert("Add at least one contact before saving the float plan.");
+        showStep(3);
+        return false;
+      }
+
+      return true;
+    }
+
+    function setBackendStatus(message, state) {
+      backendStatus.className = `backend-status ${state || ""}`.trim();
+      backendStatus.textContent = message;
+    }
+
+    function markBackendDraftDirty() {
+      if (!backendSavedPayload || generatedPayload.value === backendSavedPayload) return;
+      backendSavedPayload = "";
+      setBackendStatus("Draft changed since backend save.", "");
+    }
+
     async function copyText(value) {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(value);
@@ -2047,6 +2149,7 @@ This plan is held by trusted contacts.`;
       addRow("contact");
       saveDraft();
     });
+    saveBackend.addEventListener("click", savePlanToBackend);
     document.getElementById("copyPlan").addEventListener("click", copyPlan);
     document.getElementById("reminderButton").addEventListener("click", setReminder);
     document.getElementById("safeButton").addEventListener("click", safeMessage);

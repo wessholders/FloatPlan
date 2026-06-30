@@ -72,3 +72,7 @@ This payload maps cleanly to the first backend milestone:
 - Return reminders become `notification_jobs`.
 
 The backend should still validate every field server-side. The browser payload is a convenience contract, not a trusted source of truth.
+
+## Current Consumer
+
+The static prototype sends this payload to the deployed `send-float-plan` Edge Function when the user taps `Save to backend`.

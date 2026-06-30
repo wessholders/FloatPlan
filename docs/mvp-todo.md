@@ -62,10 +62,11 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [x] Add row-level security policies before storing user data.
 - [x] Apply the initial schema to the Supabase development project.
 - [x] Add Edge Function source for creating a float plan send event.
-- [ ] Store generated float plan content server-side for sent plans.
+- [x] Store generated float plan content server-side for sent plans.
 - [x] Add server-side validation so the backend does not trust browser data blindly.
-- [ ] Deploy `send-float-plan` and verify it writes rows in Supabase.
-- [ ] Connect the static prototype or React app to `send-float-plan`.
+- [x] Deploy `send-float-plan` and verify it writes rows in Supabase.
+- [x] Connect the static prototype to `send-float-plan`.
+- [ ] Test the GitHub Pages prototype saving a real form submission to Supabase.
 - [x] Add local environment placeholders for Supabase development config.
 - [ ] Add environment-based config for development, preview, and production after the React conversion.
 
@@ -137,7 +138,7 @@ This milestone proves the user flow before we spend money on provider integratio
 Add real delivery without accounts:
 
 - Anonymous send creates a server-side float plan record.
-- Backend sends SMS and/or email.
+- Backend queues SMS and/or email delivery events.
 - User gets delivery status.
 - User can close the plan as home safe.
 - Recipients get the safe-return closeout.
