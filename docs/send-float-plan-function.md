@@ -87,3 +87,9 @@ The browser sends the hidden `#generatedPayload` JSON to:
 `https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan`
 
 The anon public key is used for the request headers. The service role key remains server-side inside Supabase.
+
+Verified from GitHub Pages on June 30, 2026:
+
+```text
+Saved to backend. Plan ID: a4e6ddfb-e2ce-4ba4-a7e0-702c064b7f72
+```

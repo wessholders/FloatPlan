@@ -66,7 +66,7 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [x] Add server-side validation so the backend does not trust browser data blindly.
 - [x] Deploy `send-float-plan` and verify it writes rows in Supabase.
 - [x] Connect the static prototype to `send-float-plan`.
-- [ ] Test the GitHub Pages prototype saving a real form submission to Supabase.
+- [x] Test the GitHub Pages prototype saving a real form submission to Supabase.
 - [x] Add local environment placeholders for Supabase development config.
 - [ ] Add environment-based config for development, preview, and production after the React conversion.
 

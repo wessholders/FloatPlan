@@ -64,6 +64,12 @@ Verified response:
 }
 ```
 
+The GitHub Pages prototype has also saved a real form submission:
+
+```text
+a4e6ddfb-e2ce-4ba4-a7e0-702c064b7f72
+```
+
 ## Values Not Stored In Git
 
 These values should not be committed:
