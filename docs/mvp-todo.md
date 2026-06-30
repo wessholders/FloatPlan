@@ -17,6 +17,24 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - Hosting: Vercel or Netlify for the web app, with Supabase handling backend services.
 - Maps: keep Leaflet for the MVP; choose a production tile provider before launch if terms, cost, or attribution become a concern.
 
+## Current Machine Constraint
+
+As of June 30, 2026, this computer does not have `node`, `npm`, `deno`, or the Supabase CLI available on PATH.
+
+Most feasible work on this machine right now:
+
+- Static `index.html` prototype improvements.
+- Supabase dashboard-deployed Edge Function updates.
+- SQL migrations through the Supabase dashboard.
+- Documentation, smoke checks, and GitHub Pages deployment.
+
+Less feasible until tooling is installed:
+
+- React/Vite migration.
+- Local TypeScript frontend tests.
+- Local Edge Function compilation or deployment.
+- Supabase CLI migration workflow.
+
 ## Non-Negotiables
 
 - Users must be able to create and send a basic float plan without making an account.
@@ -33,6 +51,7 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [x] Add a static smoke test for required fields, map hooks, SMS/email handoff links, and safe-return hooks.
 - [x] Add a real-device phone test script.
 - [x] Publish the current static prototype to GitHub Pages for phone testing.
+- [x] Skip the crew/passenger detail step when `People aboard` is 1.
 - [ ] Test the flow on iPhone Safari, Android Chrome, and desktop Chrome.
 - [ ] Confirm Launch Location pin selection works on real devices.
 - [ ] Confirm Pull Out Location only appears when the trip shape needs it.

@@ -5,10 +5,12 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 ## Current MVP
 
 - Static HTML app in `index.html`
-- No auth or backend
+- No auth required for MVP send path
+- Supabase backend save through `send-float-plan`
 - Browser-local draft autosave
 - Required fast path: operator, activity, Launch Location, Pull Out Location, destination, departure date/time, return date/time, contacts
 - Optional detail: passengers, vessel, safety gear, beacons, vehicle/trailer, route notes
+- Passenger/crew detail step only appears when `People aboard` is greater than 1
 - Generated float plan message
 - SMS and email handoff links
 - Popup Leaflet hybrid map picker for Launch Location and optional Pull Out Location pins
@@ -26,7 +28,7 @@ Open `index.html` in a browser.
 
 For best map and SMS testing, publish to GitHub Pages and open the page on a phone. The prototype uses Leaflet from a CDN and Esri imagery/reference tiles, so the map needs network access. It also uses `sms:` and `mailto:` links, which can prefill the message in the user's native SMS or email app. The user still has to tap send.
 
-Static GitHub Pages cannot send SMS/email automatically, verify delivery, or run overdue escalation by itself. Real delivery requires a backend or serverless function using a provider such as Twilio for SMS and SendGrid/Postmark/AWS SES for email.
+Static GitHub Pages now saves submitted float plans through a Supabase Edge Function. It still cannot send SMS/email automatically, verify provider delivery, or run overdue escalation by itself. Real delivery requires backend provider integration such as Twilio for SMS and Postmark/SendGrid/AWS SES for email.
 
 ## GitHub Pages
 
