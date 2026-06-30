@@ -4,6 +4,8 @@ The initial migration lives at:
 
 `supabase/migrations/20260630190000_initial_schema.sql`
 
+The development project details live in `docs/supabase-project.md`.
+
 ## Tables
 
 - `profiles`: account profile data for authenticated users.

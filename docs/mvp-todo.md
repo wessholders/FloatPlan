@@ -57,13 +57,14 @@ The product should reduce friction first. A perfect form that people avoid is wo
 
 ## Phase 3: Backend Foundation
 
-- [ ] Create a Supabase project for development.
+- [x] Create a Supabase project for development.
 - [x] Define database tables for profiles, contacts, vessels, float plans, recipients, delivery events, check-ins, and notification jobs.
 - [x] Add row-level security policies before storing user data.
 - [ ] Add a backend API or edge function for creating a float plan send event.
 - [ ] Store generated float plan content server-side for sent plans.
 - [ ] Add server-side validation so the backend does not trust browser data blindly.
-- [ ] Add environment-based config for development, preview, and production.
+- [x] Add local environment placeholders for Supabase development config.
+- [ ] Add environment-based config for development, preview, and production after the React conversion.
 
 ## Phase 4: Real SMS And Email Delivery
 
