@@ -69,3 +69,4 @@ See `docs/supabase-schema.md` for the initial Supabase data model and RLS plan.
 See `docs/supabase-project.md` for the development Supabase project details.
 See `docs/send-float-plan-function.md` for the first Edge Function deployment notes.
 See `docs/close-float-plan-function.md` for safe-return closeout function notes.
+See `docs/codex-handoff.md` when resuming this project from another computer or Codex session.
