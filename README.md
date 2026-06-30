@@ -28,6 +28,26 @@ For best map and SMS testing, publish to GitHub Pages and open the page on a pho
 
 Static GitHub Pages cannot send SMS/email automatically, verify delivery, or run overdue escalation by itself. Real delivery requires a backend or serverless function using a provider such as Twilio for SMS and SendGrid/Postmark/AWS SES for email.
 
+## GitHub Pages
+
+This repo includes a GitHub Actions workflow at `.github/workflows/pages.yml`.
+
+To publish the prototype, enable GitHub Pages for the repository and choose `GitHub Actions` as the source. Pushes to `main` will run the static smoke test and deploy the site.
+
+Expected Pages URL after setup:
+
+`https://wessholders.github.io/FloatPlan/`
+
+## Quality Checks
+
+Run the static prototype smoke test before pushing UI changes:
+
+```powershell
+.\scripts\smoke-test.ps1
+```
+
+Use `docs/phone-test-script.md` for iPhone, Android, and desktop browser testing.
+
 ## Product Direction
 
 The first product should keep sending friction extremely low. The core safety action is not filling out a perfect government-style form; it is getting enough reliable information to a trusted person before the user leaves shore.

@@ -29,6 +29,9 @@ The product should reduce friction first. A perfect form that people avoid is wo
 
 ## Phase 1: Harden The Static Prototype
 
+- [x] Add a GitHub Pages deployment workflow for the static prototype.
+- [x] Add a static smoke test for required fields, map hooks, SMS/email handoff links, and safe-return hooks.
+- [x] Add a real-device phone test script.
 - [ ] Publish the current static prototype to GitHub Pages for phone testing.
 - [ ] Test the flow on iPhone Safari, Android Chrome, and desktop Chrome.
 - [ ] Confirm Launch Location pin selection works on real devices.
@@ -48,7 +51,8 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [ ] Keep browser-local draft saving for anonymous users.
 - [ ] Add field-level validation for required send data.
 - [ ] Add automated tests for plan generation, phone formatting, location formatting, and trip-shape behavior.
-- [ ] Add a basic CI check that runs linting and tests on every push.
+- [x] Add a basic CI smoke check for the current static prototype on every push.
+- [ ] Add a full app CI check that runs linting and tests after the React conversion.
 
 ## Phase 3: Backend Foundation
 
