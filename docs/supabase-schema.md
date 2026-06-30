@@ -18,6 +18,27 @@ The development project details live in `docs/supabase-project.md`.
 - `checkins`: safe-return, delay-update, and manual check-in records.
 - `notification_jobs`: scheduled reminders, overdue checks, and retention cleanup jobs.
 
+## MVP Maintenance Path
+
+The schema has room for accounts and saved data, but the first working backend should stay small.
+
+Use these tables first:
+
+- `float_plans`
+- `float_plan_recipients`
+- `delivery_events`
+- `checkins`
+
+Hold these tables until their features are needed:
+
+- `profiles`
+- `emergency_contacts`
+- `saved_people`
+- `vessels`
+- `notification_jobs`
+
+The first backend feature should be one Edge Function named `send-float-plan`. It should validate the browser payload, insert the float plan and recipients, and write delivery events. That keeps the browser simple and keeps provider credentials off GitHub Pages.
+
 ## Anonymous Sends
 
 The first backend milestone should allow anonymous sends. Anonymous users should not write directly to these tables from the browser. Instead, a Supabase Edge Function should validate the payload and write with a service role key.

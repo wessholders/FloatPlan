@@ -60,6 +60,7 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [x] Create a Supabase project for development.
 - [x] Define database tables for profiles, contacts, vessels, float plans, recipients, delivery events, check-ins, and notification jobs.
 - [x] Add row-level security policies before storing user data.
+- [x] Apply the initial schema to the Supabase development project.
 - [ ] Add a backend API or edge function for creating a float plan send event.
 - [ ] Store generated float plan content server-side for sent plans.
 - [ ] Add server-side validation so the backend does not trust browser data blindly.
@@ -140,6 +141,16 @@ Add real delivery without accounts:
 - Recipients get the safe-return closeout.
 
 This milestone proves the paid-product foundation: reliable delivery, audit records, reminders, and saved history.
+
+## Maintenance Rule
+
+Keep the first backend path narrow:
+
+- One public client action: send a float plan.
+- One backend entry point: `send-float-plan`.
+- Four active MVP tables: `float_plans`, `float_plan_recipients`, `delivery_events`, and `checkins`.
+- Saved contacts, saved people, vessels, profiles, and notification jobs stay dormant until their feature is actually built.
+- Twilio, Postmark, and any future providers stay behind a backend delivery wrapper so the app does not care which vendor sends the message.
 
 ## Open Decisions
 

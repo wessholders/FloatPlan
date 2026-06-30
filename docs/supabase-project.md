@@ -25,7 +25,7 @@ Apply the initial schema from:
 
 `supabase/migrations/20260630190000_initial_schema.sql`
 
-Until the Supabase CLI is installed and linked, use the dashboard SQL Editor:
+The initial schema has been applied to the development project. If it needs to be reapplied in a fresh project, use the dashboard SQL Editor:
 
 1. Open the project dashboard.
 2. Open `SQL Editor`.
@@ -33,6 +33,18 @@ Until the Supabase CLI is installed and linked, use the dashboard SQL Editor:
 4. Paste the full migration SQL.
 5. Run the query.
 6. Confirm the tables are visible in `Table Editor`.
+
+Expected tables:
+
+- `checkins`
+- `delivery_events`
+- `emergency_contacts`
+- `float_plan_recipients`
+- `float_plans`
+- `notification_jobs`
+- `profiles`
+- `saved_people`
+- `vessels`
 
 ## Values Not Stored In Git
 
