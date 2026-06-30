@@ -37,7 +37,7 @@ Hold these tables until their features are needed:
 - `vessels`
 - `notification_jobs`
 
-The first backend feature should be one Edge Function named `send-float-plan`. It should validate the browser payload, insert the float plan and recipients, and write delivery events. That keeps the browser simple and keeps provider credentials off GitHub Pages.
+The first backend feature is one Edge Function named `send-float-plan`. It validates the browser payload, inserts the float plan and recipients, and writes queued delivery events. That keeps the browser simple and keeps provider credentials off GitHub Pages.
 
 ## Anonymous Sends
 

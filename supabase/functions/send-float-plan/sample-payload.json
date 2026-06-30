@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "float-plan.static.v1",
+  "source": "static-prototype",
+  "clientGeneratedAt": "2026-06-30T18:00:00.000Z",
+  "operator": {
+    "name": "Test Operator",
+    "phone": "(555) 555-0100"
+  },
+  "activity": "power",
+  "peopleCount": 2,
+  "schedule": {
+    "departureLocal": "2026-07-01T08:00",
+    "departureIso": "2026-07-01T13:00:00.000Z",
+    "expectedReturnLocal": "2026-07-01T12:00",
+    "expectedReturnIso": "2026-07-01T17:00:00.000Z",
+    "timezone": "America/Chicago"
+  },
+  "trip": {
+    "shape": "out_and_back",
+    "destination": "Test lake",
+    "route": "Launch, run the shoreline, return to ramp.",
+    "conditions": "Clear weather test record.",
+    "launchLocation": {
+      "label": "Launch Location",
+      "description": "Test ramp",
+      "coordinates": {
+        "latitude": 29.28529,
+        "longitude": -94.8366,
+        "display": "(29.28529, -94.83660)",
+        "mapsUrl": "https://maps.google.com/?q=29.28529,-94.83660"
+      }
+    },
+    "pullOutLocation": {
+      "label": "Pull Out Location",
+      "description": "Test ramp",
+      "coordinates": {
+        "latitude": 29.28529,
+        "longitude": -94.8366,
+        "display": "(29.28529, -94.83660)",
+        "mapsUrl": "https://maps.google.com/?q=29.28529,-94.83660"
+      }
+    }
+  },
+  "people": [
+    {
+      "name": "Test Operator",
+      "phone": "(555) 555-0100",
+      "age": null,
+      "pfd": "red",
+      "notes": null
+    }
+  ],
+  "vessel": {
+    "type": "power",
+    "name": "Test vessel",
+    "length": "18 ft",
+    "color": "white",
+    "registration": "TEST1234",
+    "propulsion": "outboard",
+    "range": null,
+    "safetyGear": "PFDs, VHF, first aid",
+    "beacons": null,
+    "vehicle": "Test truck",
+    "photoLink": null
+  },
+  "recipients": [
+    {
+      "name": "Test Contact",
+      "relationship": "Friend",
+      "phone": "(555) 555-0101",
+      "email": "test@example.com"
+    }
+  ],
+  "status": {
+    "safeReturnReported": false
+  },
+  "generatedMessage": "FLOAT PLAN\n\nOperator: Test Operator\nOperator phone: (555) 555-0100\nActivity: power\nPeople aboard: 2"
+}

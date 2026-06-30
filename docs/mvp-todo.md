@@ -61,9 +61,11 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [x] Define database tables for profiles, contacts, vessels, float plans, recipients, delivery events, check-ins, and notification jobs.
 - [x] Add row-level security policies before storing user data.
 - [x] Apply the initial schema to the Supabase development project.
-- [ ] Add a backend API or edge function for creating a float plan send event.
+- [x] Add Edge Function source for creating a float plan send event.
 - [ ] Store generated float plan content server-side for sent plans.
-- [ ] Add server-side validation so the backend does not trust browser data blindly.
+- [x] Add server-side validation so the backend does not trust browser data blindly.
+- [ ] Deploy `send-float-plan` and verify it writes rows in Supabase.
+- [ ] Connect the static prototype or React app to `send-float-plan`.
 - [x] Add local environment placeholders for Supabase development config.
 - [ ] Add environment-based config for development, preview, and production after the React conversion.
 

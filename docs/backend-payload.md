@@ -34,7 +34,9 @@ The payload is written to the hidden `#generatedPayload` field in `index.html` e
 - `activity`: selected water activity.
 - `peopleCount`: simple count used for fast emergency context.
 - `schedule.departureLocal`: local departure date/time from the browser form.
+- `schedule.departureIso`: browser-normalized UTC departure instant.
 - `schedule.expectedReturnLocal`: local expected return date/time from the browser form.
+- `schedule.expectedReturnIso`: browser-normalized UTC expected return instant.
 - `schedule.timezone`: browser time zone when available.
 - `trip.shape`: `out_and_back` or `different_pull_out`.
 - `trip.launchLocation`: Launch Location description and optional coordinate object.

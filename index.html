@@ -1542,6 +1542,12 @@
       };
     }
 
+    function dateTimeIso(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+
     function listPeople(people) {
       const rows = compactRows(people);
       if (!rows.length) return "No passenger detail provided.";
@@ -1630,7 +1636,9 @@ This plan is held by trusted contacts.`;
         peopleCount: optionalInteger(data.peopleCount),
         schedule: {
           departureLocal: optionalText(data.departureTime),
+          departureIso: dateTimeIso(data.departureTime),
           expectedReturnLocal: optionalText(data.returnTime),
+          expectedReturnIso: dateTimeIso(data.returnTime),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null
         },
         trip: {

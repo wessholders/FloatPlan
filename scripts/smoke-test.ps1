@@ -3,6 +3,8 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $indexPath = Join-Path $root "index.html"
 $schemaPath = Join-Path $root "supabase/migrations/20260630190000_initial_schema.sql"
+$sendFunctionPath = Join-Path $root "supabase/functions/send-float-plan/index.ts"
+$sendFunctionPayloadPath = Join-Path $root "supabase/functions/send-float-plan/sample-payload.json"
 
 if (-not (Test-Path -LiteralPath $indexPath)) {
   throw "index.html was not found at $indexPath"
@@ -12,8 +14,18 @@ if (-not (Test-Path -LiteralPath $schemaPath)) {
   throw "Initial Supabase schema was not found at $schemaPath"
 }
 
+if (-not (Test-Path -LiteralPath $sendFunctionPath)) {
+  throw "send-float-plan function was not found at $sendFunctionPath"
+}
+
+if (-not (Test-Path -LiteralPath $sendFunctionPayloadPath)) {
+  throw "send-float-plan sample payload was not found at $sendFunctionPayloadPath"
+}
+
 $html = Get-Content -LiteralPath $indexPath -Raw
 $schema = Get-Content -LiteralPath $schemaPath -Raw
+$sendFunction = Get-Content -LiteralPath $sendFunctionPath -Raw
+$sendFunctionPayload = Get-Content -LiteralPath $sendFunctionPayloadPath -Raw
 $failures = New-Object System.Collections.Generic.List[string]
 
 function Assert-Contains {
@@ -73,6 +85,8 @@ Assert-Contains "backend payload builder" 'function buildFloatPlanPayload(data, 
 Assert-Contains "backend payload schema version" 'schemaVersion: "float-plan.static.v1"'
 Assert-Contains "backend payload launch location" 'launchLocation: {'
 Assert-Contains "backend payload pull out location" 'pullOutLocation: {'
+Assert-Contains "backend payload departure ISO" 'departureIso: dateTimeIso(data.departureTime)'
+Assert-Contains "backend payload return ISO" 'expectedReturnIso: dateTimeIso(data.returnTime)'
 Assert-Contains "backend payload generated message" 'generatedMessage: plan'
 Assert-Contains "Launch Location generated output" 'Launch Location: ${formatLocationPlan(data.launchSite, data.launchCoords)}'
 Assert-Contains "Pull Out Location generated output" 'Pull Out Location: ${formatLocationPlan(data.returnSite || data.launchSite, data.returnCoords || data.launchCoords)}'
@@ -104,6 +118,34 @@ foreach ($table in @(
   if (-not $schema.Contains("alter table public.$table enable row level security")) {
     $failures.Add("schema RLS $table")
   }
+}
+
+foreach ($needle in @(
+  "buildFloatPlanRow",
+  "buildRecipientRows",
+  "buildDeliveryEventRows",
+  "validatePayload",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEYS",
+  "delivery_events",
+  "float_plan_recipients",
+  "float_plans"
+)) {
+  if (-not $sendFunction.Contains($needle)) {
+    $failures.Add("send-float-plan function $needle")
+  }
+}
+
+try {
+  $payload = $sendFunctionPayload | ConvertFrom-Json
+  if ($payload.schemaVersion -ne "float-plan.static.v1") {
+    $failures.Add("send-float-plan sample payload schemaVersion")
+  }
+  if (-not $payload.recipients -or $payload.recipients.Count -lt 1) {
+    $failures.Add("send-float-plan sample payload recipients")
+  }
+} catch {
+  $failures.Add("send-float-plan sample payload valid JSON")
 }
 
 if ($failures.Count -gt 0) {
