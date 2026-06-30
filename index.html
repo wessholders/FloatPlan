@@ -969,6 +969,7 @@
               <label>Generated float plan
                 <div id="generatedPlanPreview" class="generated" tabindex="0"></div>
                 <textarea id="generatedPlan" hidden readonly></textarea>
+                <textarea id="generatedPayload" hidden readonly></textarea>
               </label>
               <div class="alert">
                 Static test mode opens the user's SMS or email app with the plan filled in. The user still taps send. Automatic delivery, delivery status, and overdue escalation require a backend service.
@@ -1071,6 +1072,7 @@
     const peopleList = document.getElementById("peopleList");
     const contactList = document.getElementById("contactList");
     const generatedPlan = document.getElementById("generatedPlan");
+    const generatedPayload = document.getElementById("generatedPayload");
     const generatedPlanPreview = document.getElementById("generatedPlanPreview");
     const contactLinks = document.getElementById("contactLinks");
     const emailAll = document.getElementById("emailAll");
@@ -1515,8 +1517,33 @@
       return lines.join("\n");
     }
 
+    function compactRows(rows) {
+      return rows.filter(row => Object.values(row).some(Boolean));
+    }
+
+    function optionalText(value) {
+      const text = String(value || "").trim();
+      return text || null;
+    }
+
+    function optionalInteger(value) {
+      const number = Number.parseInt(value, 10);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function coordinatePayload(value) {
+      const coords = parseCoords(value);
+      if (!coords) return null;
+      return {
+        latitude: Number(coords.lat.toFixed(5)),
+        longitude: Number(coords.lon.toFixed(5)),
+        display: coordText(coords),
+        mapsUrl: mapsUrl(coords)
+      };
+    }
+
     function listPeople(people) {
-      const rows = people.filter(person => Object.values(person).some(Boolean));
+      const rows = compactRows(people);
       if (!rows.length) return "No passenger detail provided.";
       return rows.map((person, index) => {
         const bits = [
@@ -1531,7 +1558,7 @@
     }
 
     function listContacts(contacts) {
-      const rows = contacts.filter(contact => Object.values(contact).some(Boolean));
+      const rows = compactRows(contacts);
       if (!rows.length) return "No emergency contacts provided.";
       return rows.map(contact => {
         const bits = [
@@ -1590,10 +1617,76 @@ IF OVERDUE
 This plan is held by trusted contacts.`;
     }
 
+    function buildFloatPlanPayload(data, plan) {
+      return {
+        schemaVersion: "float-plan.static.v1",
+        source: "static-prototype",
+        clientGeneratedAt: new Date().toISOString(),
+        operator: {
+          name: optionalText(data.operatorName),
+          phone: optionalText(data.operatorPhone)
+        },
+        activity: optionalText(data.activity),
+        peopleCount: optionalInteger(data.peopleCount),
+        schedule: {
+          departureLocal: optionalText(data.departureTime),
+          expectedReturnLocal: optionalText(data.returnTime),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null
+        },
+        trip: {
+          shape: data.differentReturnSite ? "different_pull_out" : "out_and_back",
+          destination: optionalText(data.destination),
+          route: optionalText(data.route),
+          conditions: optionalText(data.conditions),
+          launchLocation: {
+            label: "Launch Location",
+            description: optionalText(data.launchSite),
+            coordinates: coordinatePayload(data.launchCoords)
+          },
+          pullOutLocation: {
+            label: "Pull Out Location",
+            description: optionalText(data.returnSite || data.launchSite),
+            coordinates: coordinatePayload(data.returnCoords || data.launchCoords)
+          }
+        },
+        people: compactRows(data.people).map(person => ({
+          name: optionalText(person.name),
+          phone: optionalText(person.phone),
+          age: optionalText(person.age),
+          pfd: optionalText(person.pfd),
+          notes: optionalText(person.notes)
+        })),
+        vessel: {
+          type: optionalText(data.vesselType),
+          name: optionalText(data.vesselName),
+          length: optionalText(data.vesselLength),
+          color: optionalText(data.vesselColor),
+          registration: optionalText(data.registration),
+          propulsion: optionalText(data.propulsion),
+          range: optionalText(data.range),
+          safetyGear: optionalText(data.safetyGear),
+          beacons: optionalText(data.beacons),
+          vehicle: optionalText(data.vehicle),
+          photoLink: optionalText(data.photoLink)
+        },
+        recipients: compactRows(data.contacts).map(contact => ({
+          name: optionalText(contact.name),
+          relationship: optionalText(contact.relationship),
+          phone: optionalText(contact.phone),
+          email: optionalText(contact.email)
+        })),
+        status: {
+          safeReturnReported: Boolean(data.safeReturnReported)
+        },
+        generatedMessage: plan
+      };
+    }
+
     function updateGeneratedPlan() {
       const data = getFormData();
       const plan = buildPlan(data);
       generatedPlan.value = plan;
+      generatedPayload.value = JSON.stringify(buildFloatPlanPayload(data, plan), null, 2);
       renderGeneratedPlan(plan);
 
       const subject = encodeURIComponent(`Float plan: ${data.destination || "Trip"}`);

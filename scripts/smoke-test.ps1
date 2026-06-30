@@ -2,12 +2,18 @@ $ErrorActionPreference = "Stop"
 
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $indexPath = Join-Path $root "index.html"
+$schemaPath = Join-Path $root "supabase/migrations/20260630190000_initial_schema.sql"
 
 if (-not (Test-Path -LiteralPath $indexPath)) {
   throw "index.html was not found at $indexPath"
 }
 
+if (-not (Test-Path -LiteralPath $schemaPath)) {
+  throw "Initial Supabase schema was not found at $schemaPath"
+}
+
 $html = Get-Content -LiteralPath $indexPath -Raw
+$schema = Get-Content -LiteralPath $schemaPath -Raw
 $failures = New-Object System.Collections.Generic.List[string]
 
 function Assert-Contains {
@@ -51,6 +57,7 @@ Assert-Contains "return date field" 'name="returnDate" type="date"'
 Assert-Contains "return time field" 'name="returnClock" type="time"'
 Assert-Contains "generated plan preview" 'id="generatedPlanPreview"'
 Assert-Contains "generated plan text storage" 'id="generatedPlan"'
+Assert-Contains "generated payload storage" 'id="generatedPayload"'
 Assert-Contains "email-all handoff" 'id="emailAll"'
 Assert-Contains "safe-return action" 'id="safeButton"'
 Assert-Contains "clear-plan action" 'id="clearPlan"'
@@ -62,6 +69,11 @@ Assert-Contains "hybrid label layer" 'World_Boundaries_and_Places'
 Assert-Contains "browser draft save" 'localStorage.setItem'
 Assert-Contains "browser draft clear" 'localStorage.removeItem'
 Assert-Contains "US phone formatting" 'function formatPhoneInput(input)'
+Assert-Contains "backend payload builder" 'function buildFloatPlanPayload(data, plan)'
+Assert-Contains "backend payload schema version" 'schemaVersion: "float-plan.static.v1"'
+Assert-Contains "backend payload launch location" 'launchLocation: {'
+Assert-Contains "backend payload pull out location" 'pullOutLocation: {'
+Assert-Contains "backend payload generated message" 'generatedMessage: plan'
 Assert-Contains "Launch Location generated output" 'Launch Location: ${formatLocationPlan(data.launchSite, data.launchCoords)}'
 Assert-Contains "Pull Out Location generated output" 'Pull Out Location: ${formatLocationPlan(data.returnSite || data.launchSite, data.returnCoords || data.launchCoords)}'
 Assert-Contains "out-and-back coordinate fallback" 'returnCoords || data.launchCoords'
@@ -74,6 +86,25 @@ Assert-DoesNotContain "removed USCG warning copy" "The Coast Guard does not acce
 Assert-DoesNotContain "old visible GPS label" "GPS "
 Assert-DoesNotContain "old Depart Location wording" "Depart Location"
 Assert-DoesNotContain "old Return Location wording" "Return Location"
+
+foreach ($table in @(
+  "profiles",
+  "emergency_contacts",
+  "saved_people",
+  "vessels",
+  "float_plans",
+  "float_plan_recipients",
+  "delivery_events",
+  "checkins",
+  "notification_jobs"
+)) {
+  if (-not $schema.Contains("create table public.$table")) {
+    $failures.Add("schema table $table")
+  }
+  if (-not $schema.Contains("alter table public.$table enable row level security")) {
+    $failures.Add("schema RLS $table")
+  }
+}
 
 if ($failures.Count -gt 0) {
   Write-Host "Static prototype smoke test failed:"

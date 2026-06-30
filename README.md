@@ -62,3 +62,5 @@ Near-term priorities:
 
 See `docs/research.md` for source-backed requirements and product notes.
 See `docs/mvp-todo.md` for the current build checklist and platform plan.
+See `docs/backend-payload.md` for the current browser-to-backend payload shape.
+See `docs/supabase-schema.md` for the initial Supabase data model and RLS plan.

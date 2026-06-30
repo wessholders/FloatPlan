@@ -32,7 +32,7 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [x] Add a GitHub Pages deployment workflow for the static prototype.
 - [x] Add a static smoke test for required fields, map hooks, SMS/email handoff links, and safe-return hooks.
 - [x] Add a real-device phone test script.
-- [ ] Publish the current static prototype to GitHub Pages for phone testing.
+- [x] Publish the current static prototype to GitHub Pages for phone testing.
 - [ ] Test the flow on iPhone Safari, Android Chrome, and desktop Chrome.
 - [ ] Confirm Launch Location pin selection works on real devices.
 - [ ] Confirm Pull Out Location only appears when the trip shape needs it.
@@ -50,6 +50,7 @@ The product should reduce friction first. A perfect form that people avoid is wo
 - [ ] Split the UI into focused components: trip timing, locations, people, vessel, contacts, send preview, and status.
 - [ ] Keep browser-local draft saving for anonymous users.
 - [ ] Add field-level validation for required send data.
+- [x] Add a backend-ready plan payload shape to the current prototype.
 - [ ] Add automated tests for plan generation, phone formatting, location formatting, and trip-shape behavior.
 - [x] Add a basic CI smoke check for the current static prototype on every push.
 - [ ] Add a full app CI check that runs linting and tests after the React conversion.
@@ -57,8 +58,8 @@ The product should reduce friction first. A perfect form that people avoid is wo
 ## Phase 3: Backend Foundation
 
 - [ ] Create a Supabase project for development.
-- [ ] Define database tables for profiles, contacts, vessels, float plans, recipients, delivery events, check-ins, and notification jobs.
-- [ ] Add row-level security policies before storing user data.
+- [x] Define database tables for profiles, contacts, vessels, float plans, recipients, delivery events, check-ins, and notification jobs.
+- [x] Add row-level security policies before storing user data.
 - [ ] Add a backend API or edge function for creating a float plan send event.
 - [ ] Store generated float plan content server-side for sent plans.
 - [ ] Add server-side validation so the backend does not trust browser data blindly.
