@@ -104,10 +104,13 @@ Less feasible until tooling is installed:
 - [ ] Let the user choose who receives the initial plan and who receives the safe-return closeout.
 - [ ] Schedule a reminder near expected return time.
 - [ ] Send the user an "Are you home safe?" prompt.
-- [ ] Let the user mark safe return from the web app.
+- [x] Add Edge Function source for closing a saved float plan as home safe.
+- [x] Connect the static prototype safe-return button to backend closeout when a saved plan ID exists.
+- [ ] Deploy `close-float-plan` and verify it closes a saved plan in Supabase.
+- [x] Let the user mark safe return from the web app.
 - [ ] Send a short safe-return message to selected recipients.
 - [ ] Let the user extend the expected return time before escalation language appears.
-- [ ] Store closeout time, method, and recipient delivery records.
+- [x] Store closeout time, method, and queued recipient delivery records.
 
 ## Phase 6: Optional Accounts
 

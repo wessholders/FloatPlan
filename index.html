@@ -893,6 +893,7 @@
               <input name="departureTime" type="hidden">
               <input name="returnTime" type="hidden">
               <input name="safeReturnReported" type="hidden" value="false">
+              <input name="backendFloatPlanId" type="hidden">
               <span id="calculatedReturn" hidden>Not set yet</span>
               <label>Weather or water notes
                 <textarea name="conditions" placeholder="Forecast concerns, tide/current, water temperature, visibility"></textarea>
@@ -1088,6 +1089,7 @@
   <script>
     const STORAGE_KEY = "float-plan-mvp-draft";
     const SUPABASE_FUNCTION_URL = "https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan";
+    const SUPABASE_CLOSE_FUNCTION_URL = "https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/close-float-plan";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY213bGZhYnlweHFscXRuam9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzY5MTQsImV4cCI6MjA5ODQxMjkxNH0.5MtTudfA0yRzuUh2LCdC8-8LCbYO-_THzb8zPqtpcUA";
     const steps = Array.from(document.querySelectorAll(".step"));
     const tabs = Array.from(document.querySelectorAll(".step-tab"));
@@ -2062,7 +2064,9 @@ This plan is held by trusted contacts.`;
         }
 
         setBackendStatus(`Saved to backend. Plan ID: ${result.floatPlanId}`, "success");
+        form.elements.backendFloatPlanId.value = result.floatPlanId;
         backendSavedPayload = generatedPayload.value;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormData()));
         saveStatus.textContent = "Backend saved";
       } catch (error) {
         setBackendStatus(error.message || "Backend save failed", "error");
@@ -2161,8 +2165,15 @@ This plan is held by trusted contacts.`;
       const data = getFormData();
       const message = `I am home safe from my ${data.activity || "water"} trip to ${data.destination || "the planned area"}. Please close my float plan.`;
       const contacts = data.contacts.filter(contact => contact.phone || contact.email);
+      const hadBackendPlan = Boolean(form.elements.backendFloatPlanId.value);
+      const closeout = await closeBackendFloatPlan(message);
       form.elements.safeReturnReported.value = "true";
       saveDraft();
+      if (closeout.ok) {
+        setBackendStatus(`Backend plan closed. Safe-return events queued: ${closeout.deliveryEventCount}`, "success");
+      } else if (hadBackendPlan) {
+        setBackendStatus(`${closeout.error || "Backend close failed"}. Send the safe-return message manually.`, "error");
+      }
       if (!contacts.length) {
         await copyText(message);
         saveStatus.textContent = "Safe message copied";
@@ -2173,6 +2184,39 @@ This plan is held by trusted contacts.`;
         window.location.href = smsHref(first.phone, message);
       } else {
         window.location.href = `mailto:${encodeURIComponent(first.email)}?subject=${encodeURIComponent("Home safe")}&body=${encodeURIComponent(message)}`;
+      }
+    }
+
+    async function closeBackendFloatPlan(message) {
+      const floatPlanId = form.elements.backendFloatPlanId.value;
+      if (!floatPlanId) return { ok: false };
+
+      setBackendStatus("Closing backend float plan...", "");
+      try {
+        const response = await fetch(SUPABASE_CLOSE_FUNCTION_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ floatPlanId, message })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || `Backend close failed (${response.status})`);
+        }
+        saveStatus.textContent = "Backend plan closed";
+        return {
+          ok: true,
+          deliveryEventCount: result.deliveryEventCount || 0
+        };
+      } catch (error) {
+        saveStatus.textContent = "Backend close failed";
+        return {
+          ok: false,
+          error: error.message || "Backend close failed"
+        };
       }
     }
 

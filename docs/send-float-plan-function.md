@@ -93,3 +93,5 @@ Verified from GitHub Pages on June 30, 2026:
 ```text
 Saved to backend. Plan ID: a4e6ddfb-e2ce-4ba4-a7e0-702c064b7f72
 ```
+
+The returned plan ID is stored in the browser draft as `backendFloatPlanId` so the safe-return button can close the backend record.

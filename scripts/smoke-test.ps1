@@ -5,6 +5,8 @@ $indexPath = Join-Path $root "index.html"
 $schemaPath = Join-Path $root "supabase/migrations/20260630190000_initial_schema.sql"
 $sendFunctionPath = Join-Path $root "supabase/functions/send-float-plan/index.ts"
 $sendFunctionPayloadPath = Join-Path $root "supabase/functions/send-float-plan/sample-payload.json"
+$closeFunctionPath = Join-Path $root "supabase/functions/close-float-plan/index.ts"
+$closeFunctionPayloadPath = Join-Path $root "supabase/functions/close-float-plan/sample-payload.json"
 
 if (-not (Test-Path -LiteralPath $indexPath)) {
   throw "index.html was not found at $indexPath"
@@ -22,10 +24,20 @@ if (-not (Test-Path -LiteralPath $sendFunctionPayloadPath)) {
   throw "send-float-plan sample payload was not found at $sendFunctionPayloadPath"
 }
 
+if (-not (Test-Path -LiteralPath $closeFunctionPath)) {
+  throw "close-float-plan function was not found at $closeFunctionPath"
+}
+
+if (-not (Test-Path -LiteralPath $closeFunctionPayloadPath)) {
+  throw "close-float-plan sample payload was not found at $closeFunctionPayloadPath"
+}
+
 $html = Get-Content -LiteralPath $indexPath -Raw
 $schema = Get-Content -LiteralPath $schemaPath -Raw
 $sendFunction = Get-Content -LiteralPath $sendFunctionPath -Raw
 $sendFunctionPayload = Get-Content -LiteralPath $sendFunctionPayloadPath -Raw
+$closeFunction = Get-Content -LiteralPath $closeFunctionPath -Raw
+$closeFunctionPayload = Get-Content -LiteralPath $closeFunctionPayloadPath -Raw
 $failures = New-Object System.Collections.Generic.List[string]
 
 function Assert-Contains {
@@ -67,6 +79,7 @@ Assert-Contains "departure date field" 'name="departureDate" type="date"'
 Assert-Contains "departure time field" 'name="departureClock" type="time"'
 Assert-Contains "return date field" 'name="returnDate" type="date"'
 Assert-Contains "return time field" 'name="returnClock" type="time"'
+Assert-Contains "backend float plan id field" 'name="backendFloatPlanId" type="hidden"'
 Assert-Contains "generated plan preview" 'id="generatedPlanPreview"'
 Assert-Contains "generated plan text storage" 'id="generatedPlan"'
 Assert-Contains "generated payload storage" 'id="generatedPayload"'
@@ -91,6 +104,8 @@ Assert-Contains "backend payload builder" 'function buildFloatPlanPayload(data, 
 Assert-Contains "backend save function" 'async function savePlanToBackend()'
 Assert-Contains "backend dirty marker" 'function markBackendDraftDirty()'
 Assert-Contains "backend function URL" 'https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan'
+Assert-Contains "backend close function URL" 'https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/close-float-plan'
+Assert-Contains "backend close function" 'async function closeBackendFloatPlan(message)'
 Assert-Contains "backend anon key" 'SUPABASE_ANON_KEY'
 Assert-Contains "backend payload schema version" 'schemaVersion: "float-plan.static.v1"'
 Assert-Contains "backend payload launch location" 'launchLocation: {'
@@ -146,6 +161,21 @@ foreach ($needle in @(
   }
 }
 
+foreach ($needle in @(
+  "checkins",
+  "safe_return",
+  "delivery_events",
+  "float_plan_recipients",
+  "status: `"closed`"",
+  "validatePayload",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEYS"
+)) {
+  if (-not $closeFunction.Contains($needle)) {
+    $failures.Add("close-float-plan function $needle")
+  }
+}
+
 try {
   $payload = $sendFunctionPayload | ConvertFrom-Json
   if ($payload.schemaVersion -ne "float-plan.static.v1") {
@@ -156,6 +186,15 @@ try {
   }
 } catch {
   $failures.Add("send-float-plan sample payload valid JSON")
+}
+
+try {
+  $payload = $closeFunctionPayload | ConvertFrom-Json
+  if (-not $payload.floatPlanId) {
+    $failures.Add("close-float-plan sample payload floatPlanId")
+  }
+} catch {
+  $failures.Add("close-float-plan sample payload valid JSON")
 }
 
 if ($failures.Count -gt 0) {
