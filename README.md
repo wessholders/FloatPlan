@@ -10,7 +10,7 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 - Browser-local draft autosave
 - Required fast path: operator, activity, Launch Location, Pull Out Location, destination, departure date/time, return date/time, contacts
 - Optional detail: passengers, vessel, safety gear, beacons, vehicle/trailer, route notes
-- Passenger/crew detail step only appears when `People aboard` is greater than 1
+- People step stays visible and auto-fills the primary person from the operator name and phone
 - Generated float plan message
 - SMS and email handoff links
 - Popup Leaflet hybrid map picker for Launch Location and optional Pull Out Location pins

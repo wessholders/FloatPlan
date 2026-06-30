@@ -51,7 +51,7 @@ Less feasible until tooling is installed:
 - [x] Add a static smoke test for required fields, map hooks, SMS/email handoff links, and safe-return hooks.
 - [x] Add a real-device phone test script.
 - [x] Publish the current static prototype to GitHub Pages for phone testing.
-- [x] Skip the crew/passenger detail step when `People aboard` is 1.
+- [x] Keep the People step visible and auto-fill the primary person from operator details.
 - [ ] Test the flow on iPhone Safari, Android Chrome, and desktop Chrome.
 - [ ] Confirm Launch Location pin selection works on real devices.
 - [ ] Confirm Pull Out Location only appears when the trip shape needs it.
@@ -106,7 +106,7 @@ Less feasible until tooling is installed:
 - [ ] Send the user an "Are you home safe?" prompt.
 - [x] Add Edge Function source for closing a saved float plan as home safe.
 - [x] Connect the static prototype safe-return button to backend closeout when a saved plan ID exists.
-- [ ] Deploy `close-float-plan` and verify it closes a saved plan in Supabase.
+- [x] Deploy `close-float-plan` and verify it closes a saved plan in Supabase.
 - [x] Let the user mark safe return from the web app.
 - [ ] Send a short safe-return message to selected recipients.
 - [ ] Let the user extend the expected return time before escalation language appears.

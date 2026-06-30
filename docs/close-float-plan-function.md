@@ -60,3 +60,22 @@ After deployment, test with:
 `supabase/functions/close-float-plan/sample-payload.json`
 
 The sample payload uses the first verified GitHub Pages test plan ID. If that plan has already been closed, the function should return success with `alreadyClosed = true`.
+
+## Verified Test
+
+Verified from the GitHub Pages prototype on June 30, 2026:
+
+```json
+{
+  "ok": true,
+  "floatPlanId": "a4e6ddfb-e2ce-4ba4-a7e0-702c064b7f72",
+  "status": "closed",
+  "closedAt": "2026-06-30T20:17:00.240Z",
+  "deliveryEnabled": false,
+  "deliveryEventCount": 2
+}
+```
+
+Prototype message shown:
+
+`Backend plan closed. Safe-return events queued: 2`

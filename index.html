@@ -226,10 +226,6 @@
       color: var(--green);
     }
 
-    .step-tab[hidden] {
-      display: none;
-    }
-
     form {
       display: grid;
       gap: 18px;
@@ -1121,6 +1117,8 @@
     let activeMapTarget = null;
     let selectedPin = null;
     let backendSavedPayload = "";
+    let lastOperatorName = "";
+    let lastOperatorPhone = "";
 
     const defaults = {
       people: [{ name: "", phone: "", age: "", pfd: "", notes: "" }],
@@ -1152,15 +1150,9 @@
         data.returnSite = data.launchSite;
         data.returnCoords = data.launchCoords;
       }
-      data.people = shouldPromptForPeople(data.peopleCount)
-        ? Array.from(peopleList.querySelectorAll(".person-card")).map(card => rowData(card, "person"))
-        : [];
+      data.people = Array.from(peopleList.querySelectorAll(".person-card")).map(card => rowData(card, "person"));
       data.contacts = Array.from(contactList.querySelectorAll(".contact-card")).map(card => rowData(card, "contact"));
       return data;
-    }
-
-    function shouldPromptForPeople(value = form.elements.peopleCount.value) {
-      return Number.parseInt(value, 10) > 1;
     }
 
     function rowData(card, type) {
@@ -1172,12 +1164,34 @@
       );
     }
 
+    function syncPrimaryPersonFromOperator() {
+      const firstPerson = peopleList.querySelector(".person-card");
+      if (!firstPerson) return;
+
+      const nameInput = firstPerson.querySelector('[data-person-field="name"]');
+      const phoneInput = firstPerson.querySelector('[data-person-field="phone"]');
+      const operatorName = form.elements.operatorName.value.trim();
+      const operatorPhone = form.elements.operatorPhone.value.trim();
+
+      if (nameInput && operatorName && (!nameInput.value.trim() || nameInput.value.trim() === lastOperatorName)) {
+        nameInput.value = operatorName;
+      }
+
+      if (phoneInput && operatorPhone && (!phoneInput.value.trim() || phoneInput.value.trim() === lastOperatorPhone)) {
+        phoneInput.value = operatorPhone;
+        formatPhoneInput(phoneInput);
+      }
+
+      lastOperatorName = operatorName;
+      lastOperatorPhone = operatorPhone;
+    }
+
     function saveDraft() {
+      syncPrimaryPersonFromOperator();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormData()));
       saveStatus.textContent = `Saved ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
       updateGeneratedPlan();
       markBackendDraftDirty();
-      refreshStepAvailability();
       updateSummary();
     }
 
@@ -1232,6 +1246,7 @@
       (data.people?.length ? data.people : defaults.people).forEach(person => addRow("person", person));
       contactList.innerHTML = "";
       (data.contacts?.length ? data.contacts : defaults.contacts).forEach(contact => addRow("contact", contact));
+      syncPrimaryPersonFromOperator();
       ensureTimingDefaults();
       syncComputedTimes();
       syncReturnSite();
@@ -1932,70 +1947,20 @@ This plan is held by trusted contacts.`;
     }
 
     function showStep(index) {
-      const direction = index >= currentStep ? 1 : -1;
-      currentStep = nearestAvailableStep(index, direction);
+      currentStep = Math.max(0, Math.min(index, steps.length - 1));
       steps.forEach((step, stepIndex) => step.classList.toggle("active", stepIndex === currentStep));
       tabs.forEach((tab, tabIndex) => {
-        tab.hidden = !stepAvailable(tabIndex);
         tab.classList.toggle("active", tabIndex === currentStep);
-        tab.classList.toggle("complete", stepAvailable(tabIndex) && tabIndex < currentStep);
+        tab.classList.toggle("complete", tabIndex < currentStep);
       });
-      const previousStep = previousAvailableStep(currentStep);
-      const nextAvailable = nextAvailableStep(currentStep);
-      prevStep.disabled = previousStep === currentStep;
-      nextStep.textContent = nextAvailable === currentStep ? "Update plan" : "Next";
+      prevStep.disabled = currentStep === 0;
+      nextStep.textContent = currentStep === steps.length - 1 ? "Update plan" : "Next";
       updateGeneratedPlan();
-    }
-
-    function refreshStepAvailability() {
-      tabs.forEach((tab, tabIndex) => {
-        tab.hidden = !stepAvailable(tabIndex);
-        tab.classList.toggle("complete", stepAvailable(tabIndex) && tabIndex < currentStep);
-      });
-
-      if (!stepAvailable(currentStep)) {
-        showStep(nearestAvailableStep(currentStep, 1));
-      }
-    }
-
-    function stepAvailable(index) {
-      return index !== 1 || shouldPromptForPeople();
-    }
-
-    function nearestAvailableStep(index, direction = 1) {
-      const boundedIndex = Math.max(0, Math.min(index, steps.length - 1));
-      if (stepAvailable(boundedIndex)) return boundedIndex;
-
-      for (let stepIndex = boundedIndex + direction; stepIndex >= 0 && stepIndex < steps.length; stepIndex += direction) {
-        if (stepAvailable(stepIndex)) return stepIndex;
-      }
-
-      const reverseDirection = direction > 0 ? -1 : 1;
-      for (let stepIndex = boundedIndex + reverseDirection; stepIndex >= 0 && stepIndex < steps.length; stepIndex += reverseDirection) {
-        if (stepAvailable(stepIndex)) return stepIndex;
-      }
-
-      return 0;
-    }
-
-    function nextAvailableStep(index) {
-      for (let stepIndex = index + 1; stepIndex < steps.length; stepIndex += 1) {
-        if (stepAvailable(stepIndex)) return stepIndex;
-      }
-      return index;
-    }
-
-    function previousAvailableStep(index) {
-      for (let stepIndex = index - 1; stepIndex >= 0; stepIndex -= 1) {
-        if (stepAvailable(stepIndex)) return stepIndex;
-      }
-      return index;
     }
 
     function currentStepValid() {
       syncReturnSite();
       syncComputedTimes();
-      if (!stepAvailable(currentStep)) return true;
       const fields = Array.from(steps[currentStep].querySelectorAll("input, select, textarea"));
       const nativeValid = fields.every(field => !field.required || field.reportValidity());
       if (!nativeValid) return false;
@@ -2082,7 +2047,6 @@ This plan is held by trusted contacts.`;
 
       const startingStep = currentStep;
       for (let stepIndex = 0; stepIndex < steps.length; stepIndex += 1) {
-        if (!stepAvailable(stepIndex)) continue;
         showStep(stepIndex);
         const fields = Array.from(steps[stepIndex].querySelectorAll("input, select, textarea"));
         const nativeValid = fields.every(field => !field.required || field.reportValidity());
@@ -2260,20 +2224,16 @@ This plan is held by trusted contacts.`;
     document.getElementById("reminderButton").addEventListener("click", setReminder);
     document.getElementById("safeButton").addEventListener("click", safeMessage);
     clearPlan.addEventListener("click", clearCurrentPlan);
-    prevStep.addEventListener("click", () => showStep(previousAvailableStep(currentStep)));
+    prevStep.addEventListener("click", () => showStep(currentStep - 1));
     nextStep.addEventListener("click", () => {
       if (!currentStepValid()) return;
-      const nextStepIndex = nextAvailableStep(currentStep);
-      if (nextStepIndex === currentStep) {
+      if (currentStep === steps.length - 1) {
         saveDraft();
       } else {
-        showStep(nextStepIndex);
+        showStep(currentStep + 1);
       }
     });
-    tabs.forEach(tab => tab.addEventListener("click", () => {
-      const target = Number(tab.dataset.stepTarget);
-      if (stepAvailable(target)) showStep(target);
-    }));
+    tabs.forEach(tab => tab.addEventListener("click", () => showStep(Number(tab.dataset.stepTarget))));
 
     fillForm(loadDraft());
     showStep(0);
