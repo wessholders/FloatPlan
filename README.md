@@ -41,3 +41,4 @@ Near-term priorities:
 5. Add native app features: camera vessel photos, contact picker, location capture, offline drafts, push notifications, and share sheet integration.
 
 See `docs/research.md` for source-backed requirements and product notes.
+See `docs/mvp-todo.md` for the current build checklist and platform plan.
