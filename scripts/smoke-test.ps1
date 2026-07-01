@@ -97,6 +97,7 @@ Assert-Contains "generated plan text storage" 'id="generatedPlan"'
 Assert-Contains "generated payload storage" 'id="generatedPayload"'
 Assert-Contains "backend save action" 'id="saveBackend"'
 Assert-Contains "backend status" 'id="backendStatus"'
+Assert-Contains "backend delivery status list" 'id="deliveryStatusList"'
 Assert-Contains "email-all handoff" 'id="emailAll"'
 Assert-Contains "safe-return action" 'id="safeButton"'
 Assert-Contains "clear-plan action" 'id="clearPlan"'
@@ -116,6 +117,9 @@ Assert-Contains "backend save function" 'async function savePlanToBackend()'
 Assert-Contains "backend dirty marker" 'function markBackendDraftDirty()'
 Assert-Contains "backend delivery status text" 'function deliveryStatusText(result, label)'
 Assert-Contains "backend delivery status state" 'function deliveryStatusState(result)'
+Assert-Contains "backend delivery status renderer" 'function renderDeliveryStatusList(result, heading)'
+Assert-Contains "backend delivery status rows" 'delivery-status-row'
+Assert-Contains "backend delivery results" 'deliveryResults'
 Assert-Contains "backend delivery queued count" 'deliveryQueuedCount'
 Assert-Contains "backend function URL" 'https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan'
 Assert-Contains "backend close function URL" 'https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/close-float-plan'
@@ -164,8 +168,10 @@ foreach ($needle in @(
   "buildFloatPlanRow",
   "buildRecipientRows",
   "buildDeliveryEventRows",
+  "buildDeliveryResults",
   "deliverToStoredEvents",
   "persistDeliveryUpdates",
+  "deliveryResults",
   "deliveryUpdateErrorCount",
   "deliveryCancelledCount",
   "validatePayload",
@@ -188,6 +194,7 @@ foreach ($needle in @(
   "float_plan_recipients",
   "deliverToStoredEvents",
   "persistDeliveryUpdates",
+  "deliveryResults",
   "deliveryUpdateErrorCount",
   "deliveryCancelledCount",
   "status: `"closed`"",
@@ -209,6 +216,7 @@ foreach ($needle in @(
   "POSTMARK_SERVER_TOKEN",
   "POSTMARK_FROM_EMAIL",
   "buildDeliveryEventRows",
+  "buildDeliveryResults",
   "deliverToStoredEvents",
   "persistDeliveryUpdates",
   "api.twilio.com/2010-04-01/Accounts",

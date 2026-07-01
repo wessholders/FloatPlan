@@ -12,6 +12,7 @@ Both Edge Functions create `delivery_events` rows before any provider request:
 - `close-float-plan` records safe-return delivery events.
 - `DELIVERY_ENABLED=false` or an unset value keeps events queued with `provider = pending_provider`.
 - `DELIVERY_ENABLED=true` attempts provider delivery and updates each event with provider status, message ID when available, error text, and a redacted provider payload.
+- Function responses include aggregate delivery counts plus a safe per-recipient result list for the prototype UI.
 
 This order matters. A delivery event should exist before an SMS or email provider receives a request.
 
@@ -156,3 +157,5 @@ Verified against FloatPlan Dev on July 1, 2026:
 - A test plan saved through the deployed function returned `deliveryEnabled: false`, `deliveryEventCount: 2`, `deliveryQueuedCount: 2`, and zero sent/delivered/failed/cancelled/update-error counts.
 - Closing the same test plan returned `deliveryEnabled: false`, `deliveryEventCount: 2`, `deliveryQueuedCount: 2`, and zero sent/delivered/failed/cancelled/update-error counts.
 - Remote `delivery_events` rows for the test plan showed `provider = pending_provider` and `status = queued` for both SMS and email initial-plan and safe-return events.
+
+After the next Edge Function deployment, the browser should also show each recipient/channel row below the backend status message.

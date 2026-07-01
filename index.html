@@ -574,6 +574,87 @@
       font-weight: 700;
     }
 
+    .delivery-status-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .delivery-status-heading {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .delivery-status-row {
+      display: grid;
+      gap: 5px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fbfcfe;
+      font-size: 0.88rem;
+    }
+
+    .delivery-status-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .delivery-status-recipient {
+      min-width: 0;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+
+    .delivery-status-meta {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .delivery-status-badge {
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #eef3f7;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 800;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+
+    .delivery-status-row.sent,
+    .delivery-status-row.delivered {
+      border-color: #afd6c5;
+      background: #f1faf6;
+    }
+
+    .delivery-status-row.sent .delivery-status-badge,
+    .delivery-status-row.delivered .delivery-status-badge {
+      background: #dff2e9;
+      color: var(--green);
+    }
+
+    .delivery-status-row.failed,
+    .delivery-status-row.cancelled {
+      border-color: #efbd9f;
+      background: #fff7ef;
+    }
+
+    .delivery-status-row.failed .delivery-status-badge,
+    .delivery-status-row.cancelled .delivery-status-badge {
+      background: #ffe1ce;
+      color: #96330d;
+    }
+
+    .delivery-status-error {
+      color: #96330d;
+      font-size: 0.82rem;
+      overflow-wrap: anywhere;
+    }
+
     .footer-note {
       text-align: center;
       color: var(--muted);
@@ -994,7 +1075,7 @@
                 <textarea id="generatedPayload" hidden readonly></textarea>
               </label>
               <div class="alert">
-                Static test mode opens the user's SMS or email app with the plan filled in. The user still taps send. Automatic delivery, delivery status, and overdue escalation require a backend service.
+                Browser SMS and email links remain available as fallback. Backend provider delivery only sends automatically when delivery is enabled in Supabase.
               </div>
               <div class="inline-actions">
                 <button type="button" class="btn primary" id="saveBackend">Save to backend</button>
@@ -1004,6 +1085,7 @@
                 <button type="button" class="btn ghost" id="safeButton">I'm home safe</button>
               </div>
               <div id="backendStatus" class="backend-status" aria-live="polite"></div>
+              <div id="deliveryStatusList" class="delivery-status-list" aria-live="polite"></div>
               <div id="contactLinks" class="contact-links"></div>
             </div>
 
@@ -1103,6 +1185,7 @@
     const generatedPlanPreview = document.getElementById("generatedPlanPreview");
     const contactLinks = document.getElementById("contactLinks");
     const backendStatus = document.getElementById("backendStatus");
+    const deliveryStatusList = document.getElementById("deliveryStatusList");
     const saveBackend = document.getElementById("saveBackend");
     const emailAll = document.getElementById("emailAll");
     const calculatedReturn = document.getElementById("calculatedReturn");
@@ -1208,6 +1291,7 @@
       form.reset();
       backendSavedPayload = "";
       setBackendStatus("", "");
+      clearDeliveryStatusList();
       fillForm(freshDraft());
       showStep(0);
       saveStatus.textContent = "Plan cleared";
@@ -2015,6 +2099,7 @@ This plan is held by trusted contacts.`;
 
       updateGeneratedPlan();
       setBackendStatus("Saving float plan...", "");
+      clearDeliveryStatusList();
       saveBackend.disabled = true;
 
       try {
@@ -2037,12 +2122,14 @@ This plan is held by trusted contacts.`;
           `Saved to backend. Plan ID: ${result.floatPlanId}. ${deliveryStatusText(result, "Plan delivery")}`,
           deliveryStatusState(result)
         );
+        renderDeliveryStatusList(result, "Plan delivery by recipient");
         form.elements.backendFloatPlanId.value = result.floatPlanId;
         backendSavedPayload = generatedPayload.value;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormData()));
         saveStatus.textContent = "Backend saved";
       } catch (error) {
         setBackendStatus(error.message || "Backend save failed", "error");
+        clearDeliveryStatusList();
         saveStatus.textContent = "Backend save failed";
       } finally {
         saveBackend.disabled = false;
@@ -2085,6 +2172,77 @@ This plan is held by trusted contacts.`;
       backendStatus.textContent = message;
     }
 
+    function clearDeliveryStatusList() {
+      deliveryStatusList.replaceChildren();
+    }
+
+    function renderDeliveryStatusList(result, heading) {
+      const rows = Array.isArray(result.deliveryResults) ? result.deliveryResults : [];
+      clearDeliveryStatusList();
+      if (!rows.length) return;
+
+      const title = document.createElement("div");
+      title.className = "delivery-status-heading";
+      title.textContent = heading;
+      deliveryStatusList.appendChild(title);
+
+      rows.forEach(row => {
+        const item = document.createElement("div");
+        const status = String(row.status || "queued").toLowerCase();
+        item.className = `delivery-status-row ${deliveryStatusClass(status)}`;
+
+        const main = document.createElement("div");
+        main.className = "delivery-status-main";
+
+        const recipient = document.createElement("div");
+        recipient.className = "delivery-status-recipient";
+        recipient.textContent = row.recipientName || "Recipient";
+
+        const badge = document.createElement("span");
+        badge.className = "delivery-status-badge";
+        badge.textContent = deliveryStatusLabel(status);
+
+        main.append(recipient, badge);
+
+        const meta = document.createElement("div");
+        meta.className = "delivery-status-meta";
+        meta.textContent = `${deliveryChannelLabel(row.channel)} via ${row.provider || "provider pending"}`;
+
+        item.append(main, meta);
+        if (row.errorMessage) {
+          const error = document.createElement("div");
+          error.className = "delivery-status-error";
+          error.textContent = row.errorMessage;
+          item.appendChild(error);
+        }
+
+        deliveryStatusList.appendChild(item);
+      });
+    }
+
+    function deliveryStatusClass(status) {
+      return ["queued", "sent", "delivered", "failed", "cancelled"].includes(status) ? status : "queued";
+    }
+
+    function deliveryStatusLabel(status) {
+      switch (status) {
+        case "delivered":
+          return "Delivered";
+        case "sent":
+          return "Sent";
+        case "failed":
+          return "Failed";
+        case "cancelled":
+          return "Cancelled";
+        default:
+          return "Queued";
+      }
+    }
+
+    function deliveryChannelLabel(channel) {
+      return String(channel || "").toLowerCase() === "sms" ? "SMS" : "Email";
+    }
+
     function deliveryStatusText(result, label) {
       const eventCount = optionalInteger(result.deliveryEventCount) || 0;
       if (!eventCount) return `${label}: no recipient delivery events.`;
@@ -2125,6 +2283,7 @@ This plan is held by trusted contacts.`;
       if (!backendSavedPayload || generatedPayload.value === backendSavedPayload) return;
       backendSavedPayload = "";
       setBackendStatus("Draft changed since backend save.", "");
+      clearDeliveryStatusList();
     }
 
     async function copyText(value) {
@@ -2183,8 +2342,10 @@ This plan is held by trusted contacts.`;
           `${prefix} ${deliveryStatusText(closeout, "Safe-return delivery")}`,
           deliveryStatusState(closeout)
         );
+        renderDeliveryStatusList(closeout, "Safe-return delivery by recipient");
       } else if (hadBackendPlan) {
         setBackendStatus(`${closeout.error || "Backend close failed"}. Send the safe-return message manually.`, "error");
+        clearDeliveryStatusList();
       }
       if (!contacts.length) {
         await copyText(message);
@@ -2204,6 +2365,7 @@ This plan is held by trusted contacts.`;
       if (!floatPlanId) return { ok: false };
 
       setBackendStatus("Closing backend float plan...", "");
+      clearDeliveryStatusList();
       try {
         const response = await fetch(SUPABASE_CLOSE_FUNCTION_URL, {
           method: "POST",

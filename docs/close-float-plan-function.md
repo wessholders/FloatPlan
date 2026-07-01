@@ -13,6 +13,7 @@ This function keeps closeout simple:
 - Insert one `checkins` row with `checkin_type = safe_return`.
 - Queue safe-return `delivery_events` for recipients who have `send_safe_return = true`.
 - When `DELIVERY_ENABLED=true`, attempt Twilio/Postmark closeout delivery and update the delivery rows.
+- Return aggregate delivery counts and per-recipient delivery results.
 
 Provider delivery is disabled by default. Keep `DELIVERY_ENABLED=false` until test recipients and provider secrets are configured.
 
@@ -48,7 +49,18 @@ After deployment:
   "deliveryDeliveredCount": 0,
   "deliveryFailedCount": 0,
   "deliveryCancelledCount": 0,
-  "deliveryUpdateErrorCount": 0
+  "deliveryUpdateErrorCount": 0,
+  "deliveryResults": [
+    {
+      "eventId": "...",
+      "recipientId": "...",
+      "recipientName": "Test Contact",
+      "channel": "email",
+      "provider": "pending_provider",
+      "status": "queued",
+      "errorMessage": null
+    }
+  ]
 }
 ```
 

@@ -19,7 +19,7 @@ The product should reduce friction first. A perfect form that people avoid is wo
 
 ## Current Machine Constraint
 
-As of June 30, 2026, this computer does not have `node`, `npm`, `deno`, or the Supabase CLI available on PATH.
+As of July 1, 2026, this Codex shell does not have `node`, `npm`, `deno`, or the Supabase CLI available on PATH.
 
 Most feasible work on this machine right now:
 
@@ -99,7 +99,7 @@ Less feasible until tooling is installed:
 - [ ] Verify SMS sending through Twilio in test mode first.
 - [ ] Verify email sending through Postmark in test mode first.
 - [x] Show aggregate queued, sent, failed, cancelled, and status-update counts after backend save and closeout.
-- [ ] Show the user whether each recipient was queued, sent, failed, or needs manual retry.
+- [x] Show the user whether each recipient was queued, sent, failed, or needs manual retry.
 - [x] Keep `sms:` and `mailto:` handoff links as a fallback while real delivery matures.
 
 ## Phase 5: Return Reminder And Safe Closeout

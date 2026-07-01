@@ -19,6 +19,7 @@ Use this file to resume the Float Plan work from another computer or another Cod
 - The first People row auto-fills from operator name and phone unless the user manually changes it.
 - SMS and email manual handoff links remain in the browser as a fallback.
 - Twilio/Postmark provider delivery code exists in `supabase/functions/_shared/delivery.ts`, but `DELIVERY_ENABLED=false` remains the safe default until secrets are configured and test sends are verified.
+- The Send step renders per-recipient delivery status rows from backend responses after save and safe-return closeout.
 
 ## Supabase Project
 
@@ -60,23 +61,7 @@ The updated delivery-helper deployment was verified on July 1, 2026:
 
 ## Local Machine Tooling
 
-As of July 1, 2026, this machine has these tools available on PATH:
-
-- `node`
-- `npm`
-- `deno`
-- `supabase`
-
-Installed tool locations:
-
-- Deno: `C:\Users\wes\.deno\bin\deno.exe`
-- Supabase CLI: `C:\Users\wes\.local\bin\supabase.exe`
-- Current-session shims: `C:\Users\wes\AppData\Roaming\npm\deno.cmd` and `C:\Users\wes\AppData\Roaming\npm\supabase.cmd`
-
-The shims keep sandbox-friendly writable state inside the current repo:
-
-- Deno cache: `.deno-cache/`
-- Supabase home: `.supabase-home/`
+As of the current July 1, 2026 Codex shell, `node`, `npm`, `deno`, and `supabase` are not available on PATH. A previous session had Deno/Supabase shims, but those paths are not present in this checkout.
 
 Work that fits this machine:
 
@@ -84,12 +69,10 @@ Work that fits this machine:
 - Supabase Edge Function source edits
 - documentation
 - PowerShell smoke test
-- Deno type checks
-- Supabase CLI commands that do not require missing credentials or unavailable Docker services
 - Git commits and pushes
-- Supabase CLI or dashboard deployment
+- Supabase dashboard deployment
 
-React/Vite conversion is more feasible now that Node/npm are available, but provider delivery verification and per-recipient delivery status are the recommended next backend/product steps.
+React/Vite conversion should wait until Node/npm are available in the active shell. Provider delivery verification is still the recommended next backend/product step.
 
 ## Checks
 
@@ -105,7 +88,7 @@ Expected result:
 Static prototype smoke test passed.
 ```
 
-Run this before pushing Edge Function changes:
+Run this before pushing Edge Function changes when Deno is available:
 
 ```powershell
 deno check supabase\functions\send-float-plan\index.ts supabase\functions\close-float-plan\index.ts
@@ -125,7 +108,7 @@ Verify real provider delivery in the development project:
 2. Run `.\scripts\deploy-edge-functions.ps1 -EnableDelivery` only against the development project.
 3. Send to phone/email recipients controlled by the tester.
 4. Confirm provider message IDs, status, and errors write back to `delivery_events`.
-5. Add per-recipient delivery status in the prototype or React app.
+5. Confirm per-recipient delivery status rows appear in the prototype after save and closeout.
 
 Likely files:
 

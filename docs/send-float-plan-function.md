@@ -13,7 +13,7 @@ This function keeps the MVP backend path narrow:
 - Insert `float_plan_recipients`.
 - Insert queued `delivery_events`.
 - When `DELIVERY_ENABLED=true`, attempt Twilio/Postmark delivery and update the delivery rows.
-- Return the created `floatPlanId`.
+- Return the created `floatPlanId`, aggregate delivery counts, and per-recipient delivery results.
 
 Provider delivery is disabled by default. Keep `DELIVERY_ENABLED=false` until test recipients and provider secrets are configured.
 
@@ -75,7 +75,18 @@ Verified response shape:
   "deliveryDeliveredCount": 0,
   "deliveryFailedCount": 0,
   "deliveryCancelledCount": 0,
-  "deliveryUpdateErrorCount": 0
+  "deliveryUpdateErrorCount": 0,
+  "deliveryResults": [
+    {
+      "eventId": "...",
+      "recipientId": "...",
+      "recipientName": "Test Contact",
+      "channel": "sms",
+      "provider": "pending_provider",
+      "status": "queued",
+      "errorMessage": null
+    }
+  ]
 }
 ```
 

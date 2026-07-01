@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   buildDeliveryEventRows,
+  buildDeliveryResults,
   deliverToStoredEvents,
   persistDeliveryUpdates,
   summarizeDelivery,
@@ -171,6 +172,7 @@ export default {
       deliveryFailedCount: deliverySummary.failedCount,
       deliveryCancelledCount: deliverySummary.cancelledCount,
       deliveryUpdateErrorCount: deliveryUpdateErrors.length,
+      deliveryResults: buildDeliveryResults(deliveryEvents, deliveryUpdates, recipients),
     });
   },
 };

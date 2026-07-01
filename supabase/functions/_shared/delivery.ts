@@ -57,6 +57,16 @@ export type DeliveryAttemptUpdate = {
   values: DeliveryUpdateValues;
 };
 
+export type DeliveryResult = {
+  eventId: string;
+  recipientId: string | null;
+  recipientName: string | null;
+  channel: "sms" | "email";
+  provider: string | null;
+  status: DeliveryStatus;
+  errorMessage: string | null;
+};
+
 export type DeliverySummary = {
   deliveryEnabled: boolean;
   eventCount: number;
@@ -169,6 +179,29 @@ export async function persistDeliveryUpdates(
   }
 
   return errors;
+}
+
+export function buildDeliveryResults(
+  events: StoredDeliveryEvent[],
+  updates: DeliveryAttemptUpdate[] = [],
+  recipients: DeliveryRecipient[] = [],
+): DeliveryResult[] {
+  const updatesByEventId = new Map(updates.map((update) => [update.eventId, update.values]));
+  const recipientsById = new Map(recipients.map((recipient) => [recipient.id, recipient]));
+
+  return events.map((event) => {
+    const update = updatesByEventId.get(event.id);
+    const recipient = event.recipient_id ? recipientsById.get(event.recipient_id) : undefined;
+    return {
+      eventId: event.id,
+      recipientId: event.recipient_id,
+      recipientName: recipient?.name || null,
+      channel: event.channel,
+      provider: update?.provider ?? event.provider,
+      status: update?.status ?? event.status,
+      errorMessage: update?.error_message ?? null,
+    };
+  });
 }
 
 export function summarizeDelivery(

@@ -7,6 +7,7 @@ Mobile-first prototype for creating and sending a float plan before a user launc
 - Static HTML app in `index.html`
 - No auth required for MVP send path
 - Supabase backend save through `send-float-plan`
+- Per-recipient backend delivery status after save and safe-return closeout
 - Browser-local draft autosave
 - Required fast path: operator, activity, Launch Location, Pull Out Location, destination, departure date/time, return date/time, contacts
 - Optional detail: passengers, vessel, safety gear, beacons, vehicle/trailer, route notes
