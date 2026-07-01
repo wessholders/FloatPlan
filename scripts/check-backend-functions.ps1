@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
+$supabaseCli = Join-Path $PSScriptRoot "supabase-cli.ps1"
 
 Push-Location $root
 try {
@@ -8,7 +9,7 @@ try {
   deno --version
 
   Write-Host "Checking Supabase CLI..."
-  supabase --version
+  & $supabaseCli --version
 
   Write-Host "Type-checking Supabase Edge Functions..."
   deno check `

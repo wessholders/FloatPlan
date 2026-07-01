@@ -61,7 +61,32 @@ The updated delivery-helper deployment was verified on July 1, 2026:
 
 ## Local Machine Tooling
 
-As of the current July 1, 2026 Codex shell, `node`, `npm`, `deno`, and `supabase` are not available on PATH. A previous session had Deno/Supabase shims, but those paths are not present in this checkout.
+As of the current July 1, 2026 Codex shell, `node`, `npm`, and `deno` are not available on PATH.
+
+Supabase CLI is installed locally in the ignored `.tools/` folder:
+
+- Version: `2.109.0`
+- Executable: `.tools/supabase-cli/supabase.exe`
+- Wrapper: `.\scripts\supabase-cli.ps1`
+
+The wrapper keeps Supabase state inside this repo and disables CLI telemetry for sandbox compatibility:
+
+- Supabase home: `.supabase-home/`
+- `SUPABASE_TELEMETRY_DISABLED=1`
+- `DO_NOT_TRACK=1`
+
+If `.tools/` is missing on another checkout, run:
+
+```powershell
+.\scripts\install-supabase-cli.ps1
+```
+
+CLI auth is not configured in this sandbox yet. Remote Supabase commands need one of:
+
+- `.\scripts\supabase-cli.ps1 login`
+- a temporary `SUPABASE_ACCESS_TOKEN` environment variable
+
+Do not commit access tokens.
 
 Work that fits this machine:
 
@@ -69,6 +94,7 @@ Work that fits this machine:
 - Supabase Edge Function source edits
 - documentation
 - PowerShell smoke test
+- Supabase CLI deploy commands through `.\scripts\supabase-cli.ps1`
 - Git commits and pushes
 - Supabase dashboard deployment
 
@@ -99,6 +125,8 @@ Or run:
 ```powershell
 .\scripts\check-backend-functions.ps1
 ```
+
+In this shell, `.\scripts\check-backend-functions.ps1` still cannot complete until Deno is installed, but `.\scripts\smoke-test.ps1` and Supabase CLI dry runs work.
 
 ## Recommended Next Task
 

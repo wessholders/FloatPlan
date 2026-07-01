@@ -6,4 +6,5 @@ Thumbs.db
 !.env.example
 .deno-cache/
 .supabase-home/
+.tools/
 supabase/.temp/

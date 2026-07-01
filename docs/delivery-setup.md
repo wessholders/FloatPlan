@@ -98,14 +98,24 @@ The functions now import:
 ../_shared/delivery.ts
 ```
 
-Deploy the shared helper with both functions. The Supabase CLI is the preferred path once installed:
+Deploy the shared helper with both functions. This repo includes a local Supabase CLI installer and wrapper:
 
 ```powershell
-supabase functions deploy send-float-plan
-supabase functions deploy close-float-plan
+.\scripts\install-supabase-cli.ps1
+.\scripts\supabase-cli.ps1 --version
 ```
 
-If using the Supabase Dashboard editor, make sure the shared file is present in the function bundle. If the Dashboard editor only allows a single file in the current project view, install the Supabase CLI before enabling delivery.
+The wrapper keeps CLI state in `.supabase-home/` and runs the locally installed binary from `.tools/supabase-cli/`.
+
+Before remote deploy commands work, authenticate the CLI:
+
+```powershell
+.\scripts\supabase-cli.ps1 login
+```
+
+or set a temporary `SUPABASE_ACCESS_TOKEN` environment variable for the current shell. Do not commit access tokens.
+
+If using the Supabase Dashboard editor, make sure the shared file is present in the function bundle. If the Dashboard editor only allows a single file in the current project view, use the CLI path before enabling delivery.
 
 From this repo, after `supabase login`, use the helper script to keep delivery disabled and deploy both functions:
 
@@ -122,8 +132,8 @@ To preview the commands without changing the remote project:
 That runs:
 
 ```powershell
-supabase secrets set DELIVERY_ENABLED=false --project-ref zrcmwlfabypxqlqtnjom
-supabase functions deploy --project-ref zrcmwlfabypxqlqtnjom --use-api send-float-plan close-float-plan
+.\scripts\supabase-cli.ps1 secrets set DELIVERY_ENABLED=false --project-ref zrcmwlfabypxqlqtnjom
+.\scripts\supabase-cli.ps1 functions deploy --project-ref zrcmwlfabypxqlqtnjom --use-api send-float-plan close-float-plan
 ```
 
 Only use live provider delivery in the development project after test recipients and provider secrets are configured:

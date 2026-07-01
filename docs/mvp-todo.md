@@ -19,12 +19,12 @@ The product should reduce friction first. A perfect form that people avoid is wo
 
 ## Current Machine Constraint
 
-As of July 1, 2026, this Codex shell does not have `node`, `npm`, `deno`, or the Supabase CLI available on PATH.
+As of July 1, 2026, this Codex shell does not have `node`, `npm`, or `deno` available on PATH. Supabase CLI is installed locally through `.tools/supabase-cli/supabase.exe` and should be run through `.\scripts\supabase-cli.ps1`.
 
 Most feasible work on this machine right now:
 
 - Static `index.html` prototype improvements.
-- Supabase dashboard-deployed Edge Function updates.
+- Supabase CLI or dashboard-deployed Edge Function updates.
 - SQL migrations through the Supabase dashboard.
 - Documentation, smoke checks, and GitHub Pages deployment.
 
@@ -33,7 +33,7 @@ Less feasible until tooling is installed:
 - React/Vite migration.
 - Local TypeScript frontend tests.
 - Local Edge Function compilation or deployment.
-- Supabase CLI migration workflow.
+- Deno-based Edge Function type checks.
 
 ## Non-Negotiables
 
