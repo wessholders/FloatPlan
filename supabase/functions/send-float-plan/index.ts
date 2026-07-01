@@ -1,4 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  buildDeliveryEventRows,
+  deliverToStoredEvents,
+  persistDeliveryUpdates,
+  summarizeDelivery,
+  type DeliveryAttemptUpdate,
+  type StoredDeliveryEvent,
+} from "../_shared/delivery.ts";
 
 const MAX_RECIPIENTS = 10;
 const MAX_MESSAGE_LENGTH = 12000;
@@ -103,7 +111,7 @@ export default {
     const { data: recipients, error: recipientsError } = await supabase
       .from("float_plan_recipients")
       .insert(buildRecipientRows(floatPlanId, data.recipients))
-      .select("id, phone, email");
+      .select("id, name, phone, email");
 
     if (recipientsError || !recipients) {
       await cleanupFloatPlan(supabase, floatPlanId);
@@ -114,29 +122,55 @@ export default {
       }, 500);
     }
 
-    const deliveryRows = buildDeliveryEventRows(floatPlanId, recipients);
-    if (deliveryRows.length) {
-      const { error: deliveryError } = await supabase
-        .from("delivery_events")
-        .insert(deliveryRows);
+    const deliveryRows = buildDeliveryEventRows(floatPlanId, recipients, {
+      eventType: "float_plan",
+      smsBody: data.generatedMessage,
+      emailSubject: `Float plan from ${data.operatorName}`,
+      emailText: data.generatedMessage,
+    });
+    let deliveryEvents: StoredDeliveryEvent[] = [];
+    let deliveryUpdates: DeliveryAttemptUpdate[] = [];
+    let deliveryUpdateErrors: string[] = [];
 
-      if (deliveryError) {
+    if (deliveryRows.length) {
+      const { data: insertedDeliveryEvents, error: deliveryError } = await supabase
+        .from("delivery_events")
+        .insert(deliveryRows)
+        .select("id, float_plan_id, recipient_id, event_type, channel, provider, status");
+
+      if (deliveryError || !insertedDeliveryEvents) {
         await cleanupFloatPlan(supabase, floatPlanId);
         return jsonResponse({
           ok: false,
           error: "Could not create delivery events",
-          details: deliveryError.message,
+          details: deliveryError?.message,
         }, 500);
       }
+
+      deliveryEvents = insertedDeliveryEvents;
+      deliveryUpdates = await deliverToStoredEvents(deliveryEvents, recipients, {
+        eventType: "float_plan",
+        smsBody: data.generatedMessage,
+        emailSubject: `Float plan from ${data.operatorName}`,
+        emailText: data.generatedMessage,
+      });
+      deliveryUpdateErrors = await persistDeliveryUpdates(supabase, deliveryUpdates);
     }
+    const deliverySummary = summarizeDelivery(deliveryEvents, deliveryUpdates);
 
     return jsonResponse({
       ok: true,
       floatPlanId,
       status: "queued_for_delivery",
-      deliveryEnabled: false,
+      deliveryEnabled: deliverySummary.deliveryEnabled,
       recipientCount: recipients.length,
-      deliveryEventCount: deliveryRows.length,
+      deliveryEventCount: deliverySummary.eventCount,
+      deliveryQueuedCount: deliverySummary.queuedCount,
+      deliverySentCount: deliverySummary.sentCount,
+      deliveryDeliveredCount: deliverySummary.deliveredCount,
+      deliveryFailedCount: deliverySummary.failedCount,
+      deliveryCancelledCount: deliverySummary.cancelledCount,
+      deliveryUpdateErrorCount: deliveryUpdateErrors.length,
     });
   },
 };
@@ -280,31 +314,14 @@ function buildRecipientRows(floatPlanId: string, recipients: Recipient[]) {
   }));
 }
 
-function buildDeliveryEventRows(
-  floatPlanId: string,
-  recipients: Array<{ id: string; phone: string | null; email: string | null }>,
-) {
-  return recipients.flatMap((recipient) => {
-    const channels: Array<"sms" | "email"> = [];
-    if (recipient.phone) channels.push("sms");
-    if (recipient.email) channels.push("email");
-    return channels.map((channel) => ({
-      float_plan_id: floatPlanId,
-      recipient_id: recipient.id,
-      event_type: "float_plan",
-      channel,
-      provider: "pending_provider",
-      status: "queued",
-      provider_payload: {
-        deliveryEnabled: false,
-        reason: "Provider delivery is not enabled in the first backend slice",
-      },
-    }));
-  });
-}
-
 async function cleanupFloatPlan(
-  supabase: ReturnType<typeof createClient>,
+  supabase: {
+    from: (table: "float_plans") => {
+      delete: () => {
+        eq: (column: "id", value: string) => PromiseLike<unknown>;
+      };
+    };
+  },
   floatPlanId: string,
 ) {
   await supabase.from("float_plans").delete().eq("id", floatPlanId);

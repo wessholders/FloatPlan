@@ -48,6 +48,18 @@ Run the static prototype smoke test before pushing UI changes:
 .\scripts\smoke-test.ps1
 ```
 
+Run Edge Function type checks before pushing backend function changes:
+
+```powershell
+deno check supabase\functions\send-float-plan\index.ts supabase\functions\close-float-plan\index.ts
+```
+
+Or run the combined backend check:
+
+```powershell
+.\scripts\check-backend-functions.ps1
+```
+
 Use `docs/phone-test-script.md` for iPhone, Android, and desktop browser testing.
 
 ## Product Direction
@@ -69,4 +81,5 @@ See `docs/supabase-schema.md` for the initial Supabase data model and RLS plan.
 See `docs/supabase-project.md` for the development Supabase project details.
 See `docs/send-float-plan-function.md` for the first Edge Function deployment notes.
 See `docs/close-float-plan-function.md` for safe-return closeout function notes.
+See `docs/delivery-setup.md` for disabled-by-default Twilio/Postmark delivery setup.
 See `docs/codex-handoff.md` when resuming this project from another computer or Codex session.

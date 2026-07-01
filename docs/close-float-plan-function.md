@@ -12,8 +12,9 @@ This function keeps closeout simple:
 - Mark the matching `float_plans` row as `closed`.
 - Insert one `checkins` row with `checkin_type = safe_return`.
 - Queue safe-return `delivery_events` for recipients who have `send_safe_return = true`.
+- When `DELIVERY_ENABLED=true`, attempt Twilio/Postmark closeout delivery and update the delivery rows.
 
-It does not send SMS or email yet. The queued delivery events prepare the path for Twilio/Postmark.
+Provider delivery is disabled by default. Keep `DELIVERY_ENABLED=false` until test recipients and provider secrets are configured.
 
 The function is idempotent. If the plan is already closed, it returns success without creating duplicate check-ins or delivery events.
 
@@ -41,7 +42,13 @@ After deployment:
   "status": "closed",
   "closedAt": "...",
   "deliveryEnabled": false,
-  "deliveryEventCount": 2
+  "deliveryEventCount": 2,
+  "deliveryQueuedCount": 2,
+  "deliverySentCount": 0,
+  "deliveryDeliveredCount": 0,
+  "deliveryFailedCount": 0,
+  "deliveryCancelledCount": 0,
+  "deliveryUpdateErrorCount": 0
 }
 ```
 

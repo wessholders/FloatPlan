@@ -4,3 +4,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+.deno-cache/
+.supabase-home/
+supabase/.temp/

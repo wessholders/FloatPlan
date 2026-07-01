@@ -91,13 +91,16 @@ Less feasible until tooling is installed:
 
 ## Phase 4: Real SMS And Email Delivery
 
-- [ ] Create a delivery service abstraction in the backend.
-- [ ] Implement SMS sending through Twilio in test mode first.
-- [ ] Implement email sending through Postmark in test mode first.
-- [ ] Record every send attempt in `delivery_events`.
-- [ ] Record provider message IDs and delivery status when available.
+- [x] Create a delivery service abstraction in the backend.
+- [x] Add disabled-by-default SMS delivery code through Twilio.
+- [x] Add disabled-by-default email delivery code through Postmark.
+- [x] Record every send attempt in `delivery_events` before provider calls.
+- [x] Record provider message IDs and delivery status when available.
+- [ ] Verify SMS sending through Twilio in test mode first.
+- [ ] Verify email sending through Postmark in test mode first.
+- [x] Show aggregate queued, sent, failed, cancelled, and status-update counts after backend save and closeout.
 - [ ] Show the user whether each recipient was queued, sent, failed, or needs manual retry.
-- [ ] Keep `sms:` and `mailto:` handoff links as a fallback while real delivery matures.
+- [x] Keep `sms:` and `mailto:` handoff links as a fallback while real delivery matures.
 
 ## Phase 5: Return Reminder And Safe Closeout
 

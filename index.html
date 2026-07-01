@@ -569,6 +569,11 @@
       font-weight: 700;
     }
 
+    .backend-status.warning {
+      color: #7c5d08;
+      font-weight: 700;
+    }
+
     .footer-note {
       text-align: center;
       color: var(--muted);
@@ -2028,7 +2033,10 @@ This plan is held by trusted contacts.`;
           throw new Error(result.error || `Backend save failed (${response.status})`);
         }
 
-        setBackendStatus(`Saved to backend. Plan ID: ${result.floatPlanId}`, "success");
+        setBackendStatus(
+          `Saved to backend. Plan ID: ${result.floatPlanId}. ${deliveryStatusText(result, "Plan delivery")}`,
+          deliveryStatusState(result)
+        );
         form.elements.backendFloatPlanId.value = result.floatPlanId;
         backendSavedPayload = generatedPayload.value;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormData()));
@@ -2075,6 +2083,42 @@ This plan is held by trusted contacts.`;
     function setBackendStatus(message, state) {
       backendStatus.className = `backend-status ${state || ""}`.trim();
       backendStatus.textContent = message;
+    }
+
+    function deliveryStatusText(result, label) {
+      const eventCount = optionalInteger(result.deliveryEventCount) || 0;
+      if (!eventCount) return `${label}: no recipient delivery events.`;
+
+      const pieces = [];
+      const delivered = optionalInteger(result.deliveryDeliveredCount) || 0;
+      const sent = optionalInteger(result.deliverySentCount) || 0;
+      const queued = optionalInteger(result.deliveryQueuedCount) || 0;
+      const failed = optionalInteger(result.deliveryFailedCount) || 0;
+      const cancelled = optionalInteger(result.deliveryCancelledCount) || 0;
+      const updateErrors = optionalInteger(result.deliveryUpdateErrorCount) || 0;
+
+      if (delivered) pieces.push(`${delivered} delivered`);
+      if (sent) pieces.push(`${sent} sent`);
+      if (queued) pieces.push(`${queued} queued`);
+      if (failed) pieces.push(`${failed} failed`);
+      if (cancelled) pieces.push(`${cancelled} cancelled`);
+
+      let text = `${label}: ${pieces.join(", ") || `${eventCount} recorded`}.`;
+      if (result.deliveryEnabled === false) {
+        text += " Provider delivery is off; SMS/email fallback is still available.";
+      } else if (failed || updateErrors) {
+        text += " Review failed recipients before relying on provider delivery.";
+      }
+      if (updateErrors) {
+        text += ` Delivery status update errors: ${updateErrors}.`;
+      }
+      return text;
+    }
+
+    function deliveryStatusState(result) {
+      const failed = optionalInteger(result.deliveryFailedCount) || 0;
+      const updateErrors = optionalInteger(result.deliveryUpdateErrorCount) || 0;
+      return failed || updateErrors ? "warning" : "success";
     }
 
     function markBackendDraftDirty() {
@@ -2134,7 +2178,11 @@ This plan is held by trusted contacts.`;
       form.elements.safeReturnReported.value = "true";
       saveDraft();
       if (closeout.ok) {
-        setBackendStatus(`Backend plan closed. Safe-return events queued: ${closeout.deliveryEventCount}`, "success");
+        const prefix = closeout.alreadyClosed ? "Backend plan already closed." : "Backend plan closed.";
+        setBackendStatus(
+          `${prefix} ${deliveryStatusText(closeout, "Safe-return delivery")}`,
+          deliveryStatusState(closeout)
+        );
       } else if (hadBackendPlan) {
         setBackendStatus(`${closeout.error || "Backend close failed"}. Send the safe-return message manually.`, "error");
       }
@@ -2173,7 +2221,7 @@ This plan is held by trusted contacts.`;
         saveStatus.textContent = "Backend plan closed";
         return {
           ok: true,
-          deliveryEventCount: result.deliveryEventCount || 0
+          ...result
         };
       } catch (error) {
         saveStatus.textContent = "Backend close failed";

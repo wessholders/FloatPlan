@@ -7,6 +7,8 @@ $sendFunctionPath = Join-Path $root "supabase/functions/send-float-plan/index.ts
 $sendFunctionPayloadPath = Join-Path $root "supabase/functions/send-float-plan/sample-payload.json"
 $closeFunctionPath = Join-Path $root "supabase/functions/close-float-plan/index.ts"
 $closeFunctionPayloadPath = Join-Path $root "supabase/functions/close-float-plan/sample-payload.json"
+$deliveryHelperPath = Join-Path $root "supabase/functions/_shared/delivery.ts"
+$deliverySetupPath = Join-Path $root "docs/delivery-setup.md"
 
 if (-not (Test-Path -LiteralPath $indexPath)) {
   throw "index.html was not found at $indexPath"
@@ -32,12 +34,22 @@ if (-not (Test-Path -LiteralPath $closeFunctionPayloadPath)) {
   throw "close-float-plan sample payload was not found at $closeFunctionPayloadPath"
 }
 
+if (-not (Test-Path -LiteralPath $deliveryHelperPath)) {
+  throw "shared delivery helper was not found at $deliveryHelperPath"
+}
+
+if (-not (Test-Path -LiteralPath $deliverySetupPath)) {
+  throw "delivery setup doc was not found at $deliverySetupPath"
+}
+
 $html = Get-Content -LiteralPath $indexPath -Raw
 $schema = Get-Content -LiteralPath $schemaPath -Raw
 $sendFunction = Get-Content -LiteralPath $sendFunctionPath -Raw
 $sendFunctionPayload = Get-Content -LiteralPath $sendFunctionPayloadPath -Raw
 $closeFunction = Get-Content -LiteralPath $closeFunctionPath -Raw
 $closeFunctionPayload = Get-Content -LiteralPath $closeFunctionPayloadPath -Raw
+$deliveryHelper = Get-Content -LiteralPath $deliveryHelperPath -Raw
+$deliverySetup = Get-Content -LiteralPath $deliverySetupPath -Raw
 $failures = New-Object System.Collections.Generic.List[string]
 
 function Assert-Contains {
@@ -102,6 +114,9 @@ Assert-Contains "primary person phone autofill" 'phoneInput.value = operatorPhon
 Assert-Contains "backend payload builder" 'function buildFloatPlanPayload(data, plan)'
 Assert-Contains "backend save function" 'async function savePlanToBackend()'
 Assert-Contains "backend dirty marker" 'function markBackendDraftDirty()'
+Assert-Contains "backend delivery status text" 'function deliveryStatusText(result, label)'
+Assert-Contains "backend delivery status state" 'function deliveryStatusState(result)'
+Assert-Contains "backend delivery queued count" 'deliveryQueuedCount'
 Assert-Contains "backend function URL" 'https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/send-float-plan'
 Assert-Contains "backend close function URL" 'https://zrcmwlfabypxqlqtnjom.supabase.co/functions/v1/close-float-plan'
 Assert-Contains "backend close function" 'async function closeBackendFloatPlan(message)'
@@ -145,9 +160,14 @@ foreach ($table in @(
 }
 
 foreach ($needle in @(
+  "../_shared/delivery.ts",
   "buildFloatPlanRow",
   "buildRecipientRows",
   "buildDeliveryEventRows",
+  "deliverToStoredEvents",
+  "persistDeliveryUpdates",
+  "deliveryUpdateErrorCount",
+  "deliveryCancelledCount",
   "validatePayload",
   "SUPABASE_SERVICE_ROLE_KEY",
   "SUPABASE_SECRET_KEYS",
@@ -161,10 +181,15 @@ foreach ($needle in @(
 }
 
 foreach ($needle in @(
+  "../_shared/delivery.ts",
   "checkins",
   "safe_return",
   "delivery_events",
   "float_plan_recipients",
+  "deliverToStoredEvents",
+  "persistDeliveryUpdates",
+  "deliveryUpdateErrorCount",
+  "deliveryCancelledCount",
   "status: `"closed`"",
   "validatePayload",
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -172,6 +197,38 @@ foreach ($needle in @(
 )) {
   if (-not $closeFunction.Contains($needle)) {
     $failures.Add("close-float-plan function $needle")
+  }
+}
+
+foreach ($needle in @(
+  "DELIVERY_ENABLED",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_MESSAGING_SERVICE_SID",
+  "TWILIO_FROM_NUMBER",
+  "POSTMARK_SERVER_TOKEN",
+  "POSTMARK_FROM_EMAIL",
+  "buildDeliveryEventRows",
+  "deliverToStoredEvents",
+  "persistDeliveryUpdates",
+  "api.twilio.com/2010-04-01/Accounts",
+  "api.postmarkapp.com/email"
+)) {
+  if (-not $deliveryHelper.Contains($needle)) {
+    $failures.Add("shared delivery helper $needle")
+  }
+}
+
+foreach ($needle in @(
+  "DELIVERY_ENABLED=false",
+  "TWILIO_ACCOUNT_SID",
+  "POSTMARK_SERVER_TOKEN",
+  "pending_provider",
+  "Supabase Edge Function secrets",
+  "../_shared/delivery.ts"
+)) {
+  if (-not $deliverySetup.Contains($needle)) {
+    $failures.Add("delivery setup doc $needle")
   }
 }
 

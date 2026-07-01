@@ -12,9 +12,10 @@ This function keeps the MVP backend path narrow:
 - Insert one `float_plans` row.
 - Insert `float_plan_recipients`.
 - Insert queued `delivery_events`.
+- When `DELIVERY_ENABLED=true`, attempt Twilio/Postmark delivery and update the delivery rows.
 - Return the created `floatPlanId`.
 
-It does not send SMS or email yet. Twilio and Postmark will be added behind the delivery-events path later.
+Provider delivery is disabled by default. Keep `DELIVERY_ENABLED=false` until test recipients and provider secrets are configured.
 
 ## Endpoint
 
@@ -31,6 +32,8 @@ Supabase hosted functions provide these values by default:
 - Legacy fallback: `SUPABASE_SERVICE_ROLE_KEY`
 
 The function uses a server-side key because anonymous users should not write directly to the database from GitHub Pages.
+
+Optional provider delivery secrets are documented in `docs/delivery-setup.md`.
 
 ## Deployment
 
@@ -66,7 +69,13 @@ Verified response shape:
   "status": "queued_for_delivery",
   "deliveryEnabled": false,
   "recipientCount": 1,
-  "deliveryEventCount": 2
+  "deliveryEventCount": 2,
+  "deliveryQueuedCount": 2,
+  "deliverySentCount": 0,
+  "deliveryDeliveredCount": 0,
+  "deliveryFailedCount": 0,
+  "deliveryCancelledCount": 0,
+  "deliveryUpdateErrorCount": 0
 }
 ```
 
