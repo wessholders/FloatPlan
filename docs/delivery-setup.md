@@ -180,3 +180,15 @@ Verified CLI deployment against FloatPlan Dev on July 1, 2026:
 The deployed function source now returns `deliveryResults`, so the browser should show each recipient/channel row below the backend status message after save and closeout.
 
 Local direct HTTPS invocation from this Codex shell was blocked by a certificate trust/SNI issue and then returned an nginx 404 when certificate checks were disabled. Verify the deployed response from GitHub Pages or the Supabase dashboard before enabling provider delivery.
+
+## Verified GitHub Pages Disabled-Delivery Test
+
+Verified from GitHub Pages on July 1, 2026:
+
+- Test plan ID: `9340fd15-a1c2-4dd9-ae12-b6389576c306`.
+- Backend save returned: `Plan delivery: 2 queued. Provider delivery is off; SMS/email fallback is still available.`
+- Initial `delivery_events` rows were queued for `float_plan` SMS and email with `provider = pending_provider`.
+- Safe-return closeout returned: `Safe-return delivery: 2 queued. Provider delivery is off; SMS/email fallback is still available.`
+- `float_plans.status` changed to `closed`.
+- `float_plans.closed_at` was populated: `2026-07-01 18:29:55.732+00`.
+- Final `delivery_events` rows included `float_plan` SMS/email and `safe_return` SMS/email, all queued with `provider = pending_provider` and no errors.

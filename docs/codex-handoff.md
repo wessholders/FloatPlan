@@ -66,6 +66,13 @@ The per-recipient delivery status deployment was verified through the Supabase C
 - Function list confirmed both functions are `ACTIVE`.
 - Direct local HTTPS invocation from this Codex shell failed because of a certificate trust/SNI issue, so verify the `deliveryResults` response from GitHub Pages or the Supabase dashboard.
 
+GitHub Pages disabled-delivery verification was completed on July 1, 2026:
+
+- Test plan ID: `9340fd15-a1c2-4dd9-ae12-b6389576c306`.
+- Backend save returned two queued initial-plan delivery events.
+- Safe-return closeout closed the plan and returned two queued safe-return delivery events.
+- Final `delivery_events` rows were `float_plan` SMS/email and `safe_return` SMS/email, all `queued` with `provider = pending_provider`.
+
 ## Local Machine Tooling
 
 As of the current July 1, 2026 Codex shell, `node`, `npm`, and `deno` are not available on PATH.
