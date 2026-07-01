@@ -16,6 +16,9 @@ Push-Location $root
 try {
   Write-Host "Using Supabase CLI:"
   & $supabaseCli --version
+  if ($LASTEXITCODE -ne 0) {
+    throw "Supabase CLI is not available."
+  }
 
   $deployArgs = @("functions", "deploy", "--project-ref", $ProjectRef, "--use-api") + $Functions
 
@@ -30,10 +33,16 @@ try {
   if (-not $SkipDeliverySecret) {
     Write-Host "Setting DELIVERY_ENABLED=$deliveryEnabled for project $ProjectRef..."
     & $supabaseCli secrets set "DELIVERY_ENABLED=$deliveryEnabled" --project-ref $ProjectRef
+    if ($LASTEXITCODE -ne 0) {
+      throw "Could not set DELIVERY_ENABLED for project $ProjectRef."
+    }
   }
 
   Write-Host "Deploying Edge Functions to project $ProjectRef..."
   & $supabaseCli @deployArgs
+  if ($LASTEXITCODE -ne 0) {
+    throw "Could not deploy Edge Functions to project $ProjectRef."
+  }
 
   Write-Host "Edge Function deployment command completed."
 } finally {

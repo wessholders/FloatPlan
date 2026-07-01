@@ -9,6 +9,8 @@ $closeFunctionPath = Join-Path $root "supabase/functions/close-float-plan/index.
 $closeFunctionPayloadPath = Join-Path $root "supabase/functions/close-float-plan/sample-payload.json"
 $deliveryHelperPath = Join-Path $root "supabase/functions/_shared/delivery.ts"
 $deliverySetupPath = Join-Path $root "docs/delivery-setup.md"
+$checkDeliverySecretsPath = Join-Path $root "scripts/check-delivery-secrets.ps1"
+$configureDeliverySecretsPath = Join-Path $root "scripts/configure-delivery-secrets.ps1"
 
 if (-not (Test-Path -LiteralPath $indexPath)) {
   throw "index.html was not found at $indexPath"
@@ -42,6 +44,14 @@ if (-not (Test-Path -LiteralPath $deliverySetupPath)) {
   throw "delivery setup doc was not found at $deliverySetupPath"
 }
 
+if (-not (Test-Path -LiteralPath $checkDeliverySecretsPath)) {
+  throw "delivery secret check script was not found at $checkDeliverySecretsPath"
+}
+
+if (-not (Test-Path -LiteralPath $configureDeliverySecretsPath)) {
+  throw "delivery secret configuration script was not found at $configureDeliverySecretsPath"
+}
+
 $html = Get-Content -LiteralPath $indexPath -Raw
 $schema = Get-Content -LiteralPath $schemaPath -Raw
 $sendFunction = Get-Content -LiteralPath $sendFunctionPath -Raw
@@ -50,6 +60,8 @@ $closeFunction = Get-Content -LiteralPath $closeFunctionPath -Raw
 $closeFunctionPayload = Get-Content -LiteralPath $closeFunctionPayloadPath -Raw
 $deliveryHelper = Get-Content -LiteralPath $deliveryHelperPath -Raw
 $deliverySetup = Get-Content -LiteralPath $deliverySetupPath -Raw
+$checkDeliverySecrets = Get-Content -LiteralPath $checkDeliverySecretsPath -Raw
+$configureDeliverySecrets = Get-Content -LiteralPath $configureDeliverySecretsPath -Raw
 $failures = New-Object System.Collections.Generic.List[string]
 
 function Assert-Contains {
@@ -233,10 +245,27 @@ foreach ($needle in @(
   "POSTMARK_SERVER_TOKEN",
   "pending_provider",
   "Supabase Edge Function secrets",
-  "../_shared/delivery.ts"
+  "../_shared/delivery.ts",
+  ".\scripts\check-delivery-secrets.ps1",
+  ".\scripts\configure-delivery-secrets.ps1"
 )) {
   if (-not $deliverySetup.Contains($needle)) {
     $failures.Add("delivery setup doc $needle")
+  }
+}
+
+foreach ($needle in @(
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "POSTMARK_SERVER_TOKEN",
+  "POSTMARK_FROM_EMAIL",
+  "DELIVERY_ENABLED"
+)) {
+  if (-not $checkDeliverySecrets.Contains($needle)) {
+    $failures.Add("delivery secret check script $needle")
+  }
+  if (-not $configureDeliverySecrets.Contains($needle)) {
+    $failures.Add("delivery secret configuration script $needle")
   }
 }
 

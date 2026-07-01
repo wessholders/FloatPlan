@@ -10,6 +10,9 @@ try {
 
   Write-Host "Checking Supabase CLI..."
   & $supabaseCli --version
+  if ($LASTEXITCODE -ne 0) {
+    throw "Supabase CLI is not available."
+  }
 
   Write-Host "Type-checking Supabase Edge Functions..."
   deno check `

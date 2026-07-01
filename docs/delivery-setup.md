@@ -72,6 +72,28 @@ The helper normalizes 10-digit US-style numbers into E.164 using `DEFAULT_SMS_CO
 
 Official API reference: https://www.twilio.com/docs/messaging/api/message-resource
 
+## Provider Secret Setup
+
+First check which secret names are already present:
+
+```powershell
+.\scripts\check-delivery-secrets.ps1
+```
+
+To enter Twilio and Postmark secrets locally without putting token values in chat or source control:
+
+```powershell
+.\scripts\configure-delivery-secrets.ps1
+```
+
+The script prompts for credentials, writes them to a temporary ignored file under `.supabase-home/`, uploads them through the Supabase CLI, deletes the temporary file, and leaves:
+
+```text
+DELIVERY_ENABLED=false
+```
+
+That is intentional. Do not enable provider delivery until test recipient phone/email addresses are controlled and ready.
+
 ## Postmark Email
 
 Required when email delivery is enabled:

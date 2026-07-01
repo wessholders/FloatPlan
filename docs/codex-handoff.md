@@ -103,6 +103,15 @@ CLI auth is configured in this sandbox as of July 1, 2026. If another checkout i
 
 Do not commit access tokens.
 
+Provider delivery secrets were not present when checked on July 1, 2026. Use these scripts before enabling real SMS/email delivery:
+
+```powershell
+.\scripts\check-delivery-secrets.ps1
+.\scripts\configure-delivery-secrets.ps1
+```
+
+The configure script uploads Twilio/Postmark secrets and keeps `DELIVERY_ENABLED=false` until a controlled test is ready.
+
 Work that fits this machine:
 
 - static HTML/CSS/JS edits
