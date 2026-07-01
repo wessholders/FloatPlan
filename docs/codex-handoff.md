@@ -59,6 +59,13 @@ The updated delivery-helper deployment was verified on July 1, 2026:
 - Safe-return response: delivery disabled, 2 queued events, 0 sent/delivered/failed/cancelled/update errors.
 - Remote `delivery_events` summary confirmed `provider = pending_provider` and `status = queued` for SMS and email on both event types.
 
+The per-recipient delivery status deployment was verified through the Supabase CLI on July 1, 2026:
+
+- `DELIVERY_ENABLED=false` set on project `zrcmwlfabypxqlqtnjom`.
+- `send-float-plan` and `close-float-plan` deployed as version 7.
+- Function list confirmed both functions are `ACTIVE`.
+- Direct local HTTPS invocation from this Codex shell failed because of a certificate trust/SNI issue, so verify the `deliveryResults` response from GitHub Pages or the Supabase dashboard.
+
 ## Local Machine Tooling
 
 As of the current July 1, 2026 Codex shell, `node`, `npm`, and `deno` are not available on PATH.
@@ -72,6 +79,7 @@ Supabase CLI is installed locally in the ignored `.tools/` folder:
 The wrapper keeps Supabase state inside this repo and disables CLI telemetry for sandbox compatibility:
 
 - Supabase home: `.supabase-home/`
+- Windows app data: `.supabase-home/AppData/`
 - `SUPABASE_TELEMETRY_DISABLED=1`
 - `DO_NOT_TRACK=1`
 
@@ -81,7 +89,7 @@ If `.tools/` is missing on another checkout, run:
 .\scripts\install-supabase-cli.ps1
 ```
 
-CLI auth is not configured in this sandbox yet. Remote Supabase commands need one of:
+CLI auth is configured in this sandbox as of July 1, 2026. If another checkout is not authenticated, remote Supabase commands need one of:
 
 - `.\scripts\supabase-cli.ps1 login`
 - a temporary `SUPABASE_ACCESS_TOKEN` environment variable

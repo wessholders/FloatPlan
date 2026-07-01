@@ -168,4 +168,15 @@ Verified against FloatPlan Dev on July 1, 2026:
 - Closing the same test plan returned `deliveryEnabled: false`, `deliveryEventCount: 2`, `deliveryQueuedCount: 2`, and zero sent/delivered/failed/cancelled/update-error counts.
 - Remote `delivery_events` rows for the test plan showed `provider = pending_provider` and `status = queued` for both SMS and email initial-plan and safe-return events.
 
-After the next Edge Function deployment, the browser should also show each recipient/channel row below the backend status message.
+## Verified Per-Recipient Status Deploy
+
+Verified CLI deployment against FloatPlan Dev on July 1, 2026:
+
+- `DELIVERY_ENABLED=false` was set with `.\scripts\supabase-cli.ps1 secrets set`.
+- `send-float-plan` deployed as version 7.
+- `close-float-plan` deployed as version 7.
+- Function list confirmed both functions are `ACTIVE`.
+
+The deployed function source now returns `deliveryResults`, so the browser should show each recipient/channel row below the backend status message after save and closeout.
+
+Local direct HTTPS invocation from this Codex shell was blocked by a certificate trust/SNI issue and then returned an nginx 404 when certificate checks were disabled. Verify the deployed response from GitHub Pages or the Supabase dashboard before enabling provider delivery.

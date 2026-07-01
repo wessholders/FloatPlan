@@ -1,4 +1,5 @@
 .vscode/
+AppData/
 .DS_Store
 Thumbs.db
 .env
